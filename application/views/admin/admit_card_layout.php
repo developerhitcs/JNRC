@@ -8,10 +8,15 @@
 		body { font-family: "Times New Roman", serif; font-size: 14px; line-height: 18px; color: #111; }
 		table { width: 100%; border-collapse: collapse; }
 		td, th { padding: 7px; vertical-align: middle; }
-		.header { margin-bottom: 18px; border: 0; }
+		.header { margin-bottom: 18px; border: 0; table-layout: fixed; }
 		.header td { padding: 0; text-align: center; border: 0; }
-		.council-name { font-size: 20px; line-height: 25px; font-weight: bold; text-align: center; }
-		.card-title { font-size: 17px; line-height: 22px; font-weight: bold; text-align: center; margin-top: 4px; }
+		.header-logo { width: 14%; text-align: left !important; }
+		.header-title { width: 72%; }
+		.header-qr { width: 14%; text-align: right !important; }
+		.header-logo-image { width: 76px; height: 76px; }
+		.header-qr-image { width: 76px; height: 76px; }
+		.council-name { display: block; font-size: 18px; line-height: 24px; font-weight: bold; text-align: center; white-space: nowrap; }
+		.card-title { display: block; font-size: 17px; line-height: 22px; font-weight: bold; text-align: center; margin-top: 6px; }
         .exam-layout { border: 1px solid #222; table-layout: fixed; }
 		.exam-layout > tbody > tr > td { border: 1px solid #555; padding: 0; }
 		.exam-layout > tbody > tr > td:first-child { width: 75%; }
@@ -34,13 +39,13 @@
 		.signatures { margin-top: 34px; }
 		.signatures td { text-align: center; vertical-align: bottom; }
 		.signature-image { width: 125px; height: 42px; }
-		.footer { margin-top: 28px; }
-		.qr-cell { width: 45%; vertical-align: bottom; }
-		.registrar-cell { width: 55%; text-align: center; vertical-align: bottom; }
-		.qr-image { width: 92px; height: 92px; }
+		.footer { margin-top: 12px; margin-bottom: 18px; }
+		.registrar-cell { width: 100%; text-align: right; vertical-align: bottom; }
+		.registrar-block { width: 38%; }
+		.registrar-block td { text-align: center; }
 		.registrar-image { width: 175px; height: 58px; }
-		.note { margin-top: 16px; border-top: 1px solid #555; }
-		.note td { padding-top: 10px; vertical-align: top; }
+		.note { border-top: 1px solid #555; }
+		.note td { padding: 10px 7px 0; vertical-align: top; }
 		.instructions-page { page-break-before: always; }
 		.instructions-frame { border: 1px solid #222; padding: 0px; vertical-align: top; }
 		.instructions-page h3 { margin: 5px 0 0 5px; font-size: 18px; line-height: 24px; text-align: center; }
@@ -139,13 +144,21 @@ $reg_sign = ac_pick(
 	?>
 	<table class="header">
 		<tr>
-			<td>
-				<div class="council-name">JHARKHAND NURSES REGISTRATION COUNCIL</div> <br><br>
-				<img src="<?php echo $logo; ?>" alt="JNRC logo" style="width: 102px; height: 92px;"><br>
-				<div class="card-title"><u>ADMIT CARD</u></div>
-                <br>
+			<td class="header-logo">
+				<img class="header-logo-image" src="<?php echo $logo; ?>" alt="JNRC logo">
 			</td>
+
+			<td class="header-title">
+				<div class="council-name">JHARKHAND NURSES REGISTRATION COUNCIL</div>
+                <br>
+				<div class="card-title"><u>ADMIT CARD</u></div>
+			</td>
+			<td class="header-qr">
+				<img class="header-qr-image" src="<?php echo $qr; ?>" alt="Admit card verification QR code">
+			</td>
+
 		</tr>
+
 	</table>
 
 	<table class="exam-layout">
@@ -260,20 +273,29 @@ $reg_sign = ac_pick(
 
 	<table class="footer">
 		<tr>
-			<td class="qr-cell">
-				<img class="qr-image" src="<?php echo $qr; ?>" alt="Admit card verification QR code"><br>
-				<!-- <small>Scan to verify this admit card</small> -->
-			</td>
 			<td class="registrar-cell">
-				<?php if ($reg_sign !== ''): ?>
-					<img class="registrar-image" src="<?php echo $reg_sign; ?>" alt="Registrar signature"><br>
-				<?php endif; ?>
-				<strong>Registrar</strong><br>
-				Jharkhand Nurses Registration Council<br>
-				Jharkhand, Ranchi
+				<table class="registrar-block" align="right">
+					<tr>
+						<td>
+							<?php if ($reg_sign !== ''): ?>
+								<img class="registrar-image" src="<?php echo $reg_sign; ?>" alt="Registrar signature"><br>
+							<?php endif; ?>
+							<strong>Registrar</strong><br>
+							Jharkhand Nurses Registration Council<br>
+							Jharkhand, Ranchi
+						</td>
+					</tr>
+				</table>
 			</td>
 		</tr>
 	</table>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
 
 	<table class="note">
 		<tr>
