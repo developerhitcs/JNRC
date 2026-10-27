@@ -347,7 +347,11 @@ class Admit_cards extends CI_Controller
             'dummy_photo_uri' => $dummy_photo,
             'dummy_signature_uri' => $dummy_signature,
             'registrar_signature_uri' => $registrar_signature,
-            'qr_data_uris' => array($student['id'] => $this->qr_data_uri(site_url('verify/admit-card/' . $token)))
+            'qr_data_uris' => array($student['id'] => $this->qr_data_uri(
+                site_url('verify/admit-card/' . $token),
+                $student,
+                $token
+            ))
         );
 
         $pdf = new \Dompdf\Dompdf();
@@ -399,7 +403,7 @@ class Admit_cards extends CI_Controller
         return $this->Admit_card_model->get_verified_student(hash('sha256', $token));
     }
 
-    private function qr_data_uri($url)
+    private function qr_data_uri($url, $student, $token)
     {
         if (!function_exists('imagecreatetruecolor')) {
             show_error('PHP GD is required to generate admit-card QR codes.', 500);
@@ -446,7 +450,58 @@ class Admit_cards extends CI_Controller
             return '';
         }
 
+        $directory = $this->student_upload_directory($student);
+        if ($directory === FALSE) {
+            show_error('The student upload folder could not be created for the admit-card QR image.', 500);
+            return '';
+        }
+
+        $qr_filename = 'admit_card_qr_' . substr(hash('sha256', $token), 0, 16) . '.png';
+        $qr_path = $directory . DIRECTORY_SEPARATOR . $qr_filename;
+        $saved_bytes = file_put_contents($qr_path, $png, LOCK_EX);
+        if ($saved_bytes === FALSE || $saved_bytes !== strlen($png)) {
+            show_error('The admit-card QR image could not be saved in the student upload folder.', 500);
+            return '';
+        }
+
         return 'data:image/png;base64,' . base64_encode($png);
+    }
+
+    private function student_upload_directory($student)
+    {
+        $ref_no = isset($student['ref_no']) ? (string) $student['ref_no'] : '';
+        if (
+            $ref_no === ''
+            || $ref_no === '.'
+            || $ref_no === '..'
+            || basename($ref_no) !== $ref_no
+            || strpos($ref_no, "\0") !== FALSE
+        ) {
+            return FALSE;
+        }
+
+        $upload_root = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'exam_form';
+        if (!is_dir($upload_root) && !@mkdir($upload_root, 0755, TRUE) && !is_dir($upload_root)) {
+            return FALSE;
+        }
+
+        $directory = $upload_root . DIRECTORY_SEPARATOR . $ref_no;
+        if (!is_dir($directory) && !@mkdir($directory, 0755, TRUE) && !is_dir($directory)) {
+            return FALSE;
+        }
+
+        $real_root = realpath($upload_root);
+        $real_directory = realpath($directory);
+        if (
+            $real_root === FALSE
+            || $real_directory === FALSE
+            || strpos($real_directory, $real_root . DIRECTORY_SEPARATOR) !== 0
+            || !is_writable($real_directory)
+        ) {
+            return FALSE;
+        }
+
+        return $real_directory;
     }
 
     private function require_admin()
