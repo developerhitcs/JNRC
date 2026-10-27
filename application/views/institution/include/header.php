@@ -95,6 +95,12 @@ if($this->session->userdata('school_code')==null || $this->session->userdata('lo
 				</a>
             </li>
 			<li class="nav-item">
+				<a class="nav-link" href="<?php echo base_url('institution_admit_cards'); ?>">
+					<i class="material-icons">picture_as_pdf</i>
+					<p>Download Admit Card</p>
+				</a>
+			</li>
+			<li class="nav-item">
 				<a class="nav-link" href="#" >
 				  <i class="material-icons">how_to_reg</i>
 				  <p>Student Registration</p>

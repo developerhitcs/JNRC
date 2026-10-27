@@ -80,6 +80,12 @@
 								<span class="sidebar-normal">View Admit Card Roll No</span>
 							</a>
 						</li>
+						<li class="nav-item ">
+							<a class="nav-link" href="<?php echo base_url('admin/admit-cards'); ?>">
+								<i class="material-icons">picture_as_pdf</i>
+								<span class="sidebar-normal">Release Admit Card</span>
+							</a>
+						</li>
 					</ul>
 				</div>
 			</li>

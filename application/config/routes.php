@@ -214,6 +214,13 @@ $route['generate_rollno_session'] = 'Admin/generate_rollno_session';
 // manage View All Exam Form......
 $route['admin_view_exam_form'] = 'Admin/admin_view_exam_form';
 $route['get_admit_course'] = 'Admin/get_admit_course';
+$route['admin/admit-cards'] = 'Admit_cards/index';
+$route['admit_card_release'] = 'Admit_cards/update_release';
+$route['institution_admit_cards'] = 'Admit_cards/institution_index';
+$route['institution_admit_cards/bulk'] = 'Admit_cards/download_bulk';
+$route['institution_admit_card/(:num)'] = 'Admit_cards/download/$1';
+$route['verify/admit-card/([a-f0-9]{64})'] = 'Admit_cards/verify/$1';
+$route['verify/admit-card-photo/([a-f0-9]{64})'] = 'Admit_cards/verification_photo/$1';
 $route['fetch_course'] = 'Admin/fetch_course';
 $route['fetch_session'] = 'Admin/fetch_session';
 $route['admin_view_exam_detail/(:num)'] = 'Admin/admin_view_exam_detail/$1';

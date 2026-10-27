@@ -14,10 +14,9 @@
 <script src="<?php echo base_url('assets_admin/js/plugins/perfect-scrollbar.jquery.min.js')?>"></script>
 <script src="<?php echo base_url('assets_admin/js/plugins/jquery.validate.min.js')?>"></script>
 <script src="<?php echo base_url('assets_admin/js/plugins/moment.min.js')?>"></script>
-<script src="<?php echo base_url('assets_admin/js/plugins/jquery.bootstrap-wizard.js')?>"></script>
 <script src="<?php echo base_url('assets_admin/js/plugins/jquery.dataTables.min.js')?>"></script>
-<script src="<?php echo base_url('assets_admin/js/material-dashboard.minf066.js?v=2.1.0')?>"></script>
 <script src="<?php echo base_url('assets_admin/js/plugins/bootstrap-datetimepicker.min.js')?>"></script>
+<script src="<?php echo base_url('assets_admin/js/material-dashboard.minf066.js?v=2.1.0')?>"></script>
 <script>
 $(document).ready(function() 
 {
