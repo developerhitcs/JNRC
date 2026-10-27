@@ -390,6 +390,9 @@ $config['encryption_key'] = '';
 | Session Configuration (SECURE)
 |--------------------------------------------------------------------------
 */
+$cookie_secure = !empty($_SERVER['HTTPS'])
+	&& strtolower((string) $_SERVER['HTTPS']) !== 'off';
+
 $config['sess_driver']             = 'files';
 $config['sess_cookie_name']        = 'ci_session';
 $config['sess_expiration']         = 7200;
@@ -399,8 +402,8 @@ $config['sess_time_to_update']     = 300;
 $config['sess_regenerate_destroy'] = TRUE;
 
 /* Session Cookie Security */
-$config['sess_cookie_domain']   = 'jnrcranchi.com';
-$config['sess_cookie_secure']   = TRUE;
+$config['sess_cookie_domain']   = '';
+$config['sess_cookie_secure']   = $cookie_secure;
 $config['sess_cookie_httponly'] = TRUE;
 $config['sess_cookie_samesite'] = 'Lax';
 
@@ -427,9 +430,9 @@ $config['sess_cookie_samesite'] = 'Lax';
 */
 
 $config['cookie_prefix']   = ''; 
-$config['cookie_domain']   = 'jnrcranchi.com'; // ✅ REQUIRED
+$config['cookie_domain']   = '';
 $config['cookie_path']     = '/';
-$config['cookie_secure']   = TRUE;       // ✅ FORCE HTTPS
+$config['cookie_secure']   = $cookie_secure;
 $config['cookie_httponly'] = TRUE;       // ✅ JS cannot access
 $config['cookie_samesite'] = 'Lax';       // or 'Strict'
 
@@ -485,7 +488,7 @@ $config['csrf_expire'] = 7200;
 $config['csrf_regenerate'] = FALSE;
 
 /* CSRF Cookie Security */
-$config['csrf_secure']   = TRUE;
+$config['csrf_secure']   = $cookie_secure;
 $config['csrf_httponly'] = TRUE;
 $config['csrf_samesite'] = 'Lax';
 
