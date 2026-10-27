@@ -354,6 +354,7 @@ class Admit_cards extends CI_Controller
             ))
         );
 
+        require_once APPPATH . 'third_party/dompdf/autoload.inc.php';
         $pdf = new \Dompdf\Dompdf();
         $pdf->load_html($this->load->view('admin/admit_card_layout', $data, TRUE));
         $pdf->set_paper('A4', 'portrait');
@@ -568,8 +569,36 @@ class Admit_cards extends CI_Controller
         }
 
         return array_values(array_filter($subjects, function ($subject) use ($selected) {
-            return in_array(trim($subject['subject_name']), $selected, TRUE);
+            foreach ($selected as $selected_name) {
+                if ($this->exam_subject_names_match($selected_name, $subject['subject_name'])) {
+                    return TRUE;
+                }
+            }
+
+            return FALSE;
         }));
+    }
+
+    private function exam_subject_names_match($selected_name, $scheduled_name)
+    {
+        $selected_name = trim((string) $selected_name);
+        $scheduled_name = trim((string) $scheduled_name);
+
+        if (
+            preg_match('/\Apractical\s+(ii|i)\b/i', $selected_name, $selected_practical)
+            && preg_match('/\Apractical\b.{0,32}?\b(ii|i)\b/i', $scheduled_name, $scheduled_practical)
+        ) {
+            return strcasecmp($selected_practical[1], $scheduled_practical[1]) === 0;
+        }
+
+        $normalize = function ($name) {
+            $name = preg_replace('/\s*\(written\)\s*$/i', '', trim((string) $name));
+            $name = strtolower($name);
+            $name = preg_replace('/[^a-z0-9]+/', ' ', $name);
+            return trim(preg_replace('/\s+/', ' ', $name));
+        };
+
+        return $normalize($selected_name) === $normalize($scheduled_name);
     }
 
     private function student_photo_data_uri($student)
