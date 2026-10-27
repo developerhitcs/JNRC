@@ -399,32 +399,27 @@ public function Get_exam_data($table, $session, $course)
 	
 public function Get_data_admit_course($session='', $course='', $issue_by='', $limit='')
 {
+    $ranges = array(
+        'limit 30' => array(0, 30),
+        'limit 30,60' => array(30, 30),
+        'limit 60,90' => array(60, 30),
+        'limit 90,120' => array(90, 30),
+        'limit 120,150' => array(120, 30),
+        'limit 150,180' => array(150, 30),
+        'limit 180,210' => array(180, 30),
+        'limit 210,240' => array(210, 30)
+    );
+    if (!isset($ranges[$limit])) {
+        return array();
+    }
+
     $this->db->select('*');
     $this->db->from('exam_form_tb');
     $this->db->where('batch_session', $session);
     $this->db->where('course', $course);
     $this->db->where('issue_by', $issue_by);
-    $this->db->where('date >', '2026-08-21');
     $this->db->order_by('roll_id', 'ASC');
-
-    // ✅ Parse "limit 30,60" → offset=30, rows=30
-    if (!empty($limit)) {
-        $limit_clean = trim(str_replace('limit', '', strtolower($limit))); // "30,60"
-        $parts = explode(',', $limit_clean);
-        if (count($parts) == 2) {
-            $offset   = (int) trim($parts[0]); // 30
-            $per_page = (int) trim($parts[1]) - $offset; // 60-30 = 30
-            $this->db->limit($per_page, $offset);
-        } elseif (count($parts) == 1) {
-            // plain number fallback
-            $this->db->limit((int) trim($parts[0]));
-        }
-    }
-
-    // Uncomment to debug the final SQL:
-    // $query = $this->db->get();
-    // echo $this->db->last_query(); die;
-
+    $this->db->limit($ranges[$limit][1], $ranges[$limit][0]);
     return $this->db->get()->result_array();
 }
 	public function GetDataJ($select,$table1,$table2,$q1)

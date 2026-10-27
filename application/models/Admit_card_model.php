@@ -172,6 +172,34 @@ class Admit_card_model extends CI_Model
         );
     }
 
+    public function record_admin_verification_token($student_id, $token_hash)
+    {
+        $this->db->trans_begin();
+        $release = $this->db->query(
+            'SELECT status FROM admit_card_release WHERE student_id = ? FOR UPDATE',
+            array($student_id)
+        )->row_array();
+
+        if (!$release || $release['status'] !== 'released') {
+            $this->db->trans_rollback();
+            return FALSE;
+        }
+
+        $this->db->insert('admit_card_verification_token', array(
+            'student_id' => $student_id,
+            'token_hash' => $token_hash,
+            'created_at' => date('Y-m-d H:i:s')
+        ));
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+            return FALSE;
+        }
+
+        $this->db->trans_commit();
+        return TRUE;
+    }
+
     public function record_downloads($downloads, $institution_id, $school_code)
     {
         if (empty($downloads)) {

@@ -183,6 +183,52 @@ class Admit_cards extends CI_Controller
         echo $pdf;
     }
 
+    public function admin_view($student_id)
+    {
+        $this->admin_admit_card_response($student_id, FALSE);
+    }
+
+    public function admin_download($student_id)
+    {
+        $this->admin_admit_card_response($student_id, TRUE);
+    }
+
+    private function admin_admit_card_response($student_id, $download)
+    {
+        if (!$this->require_admin()) {
+            return;
+        }
+
+        if (!ctype_digit((string) $student_id) || (int) $student_id < 1) {
+            show_404();
+            return;
+        }
+
+        $student = $this->Admit_card_model->get_released_student((int) $student_id);
+        if (!$student) {
+            show_404();
+            return;
+        }
+
+        $token = bin2hex(random_bytes(32));
+        $pdf = $this->render_admit_card_pdf($student, $token);
+
+        if (!$this->Admit_card_model->record_admin_verification_token(
+            (int) $student['id'],
+            hash('sha256', $token)
+        )) {
+            show_error('The admit card is no longer released. Refresh the list and try again.', 409);
+            return;
+        }
+
+        $filename = preg_replace('/[^A-Za-z0-9._-]/', '_', $student['ref_no']) . '.pdf';
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . $filename . '"');
+        header('Content-Length: ' . strlen($pdf));
+        header('Cache-Control: no-store, private');
+        echo $pdf;
+    }
+
     public function download_bulk()
     {
         $institution = $this->require_institution();
@@ -285,19 +331,27 @@ class Admit_cards extends CI_Controller
 
     private function render_admit_card_pdf($student, $token)
     {
+        $dummy_photo = $this->image_data_uri(FCPATH . 'assets_admin/img/dummy-admit-student.jpg');
+        $dummy_signature = $this->image_data_uri(FCPATH . 'assets_admin/img/dummy-admit-signature.png');
+        $registrar_signature = $this->image_data_uri(FCPATH . 'assets_admin/img/dummy-registrar-signature.png');
+        if ($dummy_photo === '' || $dummy_signature === '' || $registrar_signature === '') {
+            show_error('The sample admit-card photo and signature images are missing or invalid.', 500);
+            return '';
+        }
+
         $data = array(
             'row' => array($student),
             'subject_row' => $this->get_exam_subjects($student),
             'selected_center_name' => $student['name_center'],
             'logo_data_uri' => $this->image_data_uri(FCPATH . 'assets/images/logo_pdf.png'),
-            'photo_data_uris' => array($student['id'] => $this->student_photo_data_uri($student)),
-            'signature_data_uris' => array($student['id'] => $this->student_signature_data_uri($student)),
+            'dummy_photo_uri' => $dummy_photo,
+            'dummy_signature_uri' => $dummy_signature,
+            'registrar_signature_uri' => $registrar_signature,
             'qr_data_uris' => array($student['id'] => $this->qr_data_uri(site_url('verify/admit-card/' . $token)))
         );
 
-        $this->load->library('pdf');
         $pdf = new \Dompdf\Dompdf();
-        $pdf->load_html($this->load->view('admin/admit_card_pdf_course', $data, TRUE));
+        $pdf->load_html($this->load->view('admin/admit_card_layout', $data, TRUE));
         $pdf->set_paper('A4', 'portrait');
         $pdf->render();
         return $pdf->output();

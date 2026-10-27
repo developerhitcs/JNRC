@@ -99,11 +99,12 @@
                                             <th>Exam center</th>
                                             <th>Status</th>
                                             <th>Downloads</th>
+                                            <th>Admit card</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php if (empty($students)): ?>
-                                            <tr><td colspan="11">No exam applicants match these filters.</td></tr>
+                                            <tr><td colspan="12">No exam applicants match these filters.</td></tr>
                                         <?php else: ?>
                                             <?php foreach ($students as $index => $student): ?>
                                                 <?php
@@ -124,6 +125,16 @@
                                                     <td><?php echo html_escape($student['name_center'] ?: 'Not assigned'); ?></td>
                                                     <td><?php echo html_escape(ucfirst($display_status)); ?></td>
                                                     <td><?php echo (int) $student['download_count']; ?></td>
+                                                    <td>
+                                                        <?php if ($release_status === 'released'): ?>
+                                                            <a class="btn btn-sm btn-info" target="_blank" rel="noopener"
+                                                                href="<?php echo base_url('admin/admit-card/' . (int) $student['id']); ?>">View PDF</a>
+                                                            <a class="btn btn-sm btn-primary"
+                                                                href="<?php echo base_url('admin/admit-card-download/' . (int) $student['id']); ?>">Download PDF</a>
+                                                        <?php else: ?>
+                                                            <span class="text-muted">Release first</span>
+                                                        <?php endif; ?>
+                                                    </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php endif; ?>

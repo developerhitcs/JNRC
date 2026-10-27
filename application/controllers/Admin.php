@@ -507,43 +507,69 @@ $data['exam_form'] = count($exam_form);
 
 public function get_admit_course()
 {
-    if ($_SESSION['role_admin'] == 'admin') {
-
-        ini_set('memory_limit', '256M');
-        set_time_limit(120);
-
-        $session   = $this->session->userdata('session');
-        $course    = $this->session->userdata('course_type');
-        $issue_by  = $this->session->userdata('school_code');
-        $limit     = $this->session->userdata('limit'); // "limit 30,60"
-        $center_id = $this->session->userdata('center_id');
-
-        $center_query = $this->db->get_where('center_tb', ['id' => $center_id])->row();
-        $data['selected_center_name'] = $center_query ? $center_query->name_center : '';
-
-        $data['row'] = $this->Admin_model->Get_data_admit_course(
-            $session, $course, $issue_by, $limit
-        );
-
-        $this->db->where('course', $course);
-        $this->db->order_by('exam_date', 'ASC');
-        $data['subject_row'] = $this->db->get('subjects_details_tb')->result_array();
-
-        $this->load->library('pdf');
-        $this->load->view('admin/admit_card_pdf_course', $data);
-        $html = $this->output->get_output();
-
-        $this->dompdf->load_html($html);
-        $this->dompdf->render();
-        $this->dompdf->stream(
-            $issue_by . "_admit_card_form.pdf",
-            array("Attachment" => false)
-        );
-
-    } else {
-        $_SESSION['role_admin'] = '';
+    if ($this->session->userdata('role_admin') !== 'admin') {
         redirect('adminjnrc', 'refresh');
+        return;
     }
+
+    ini_set('memory_limit', '256M');
+    set_time_limit(120);
+
+    $session = $this->session->userdata('session');
+    $course = $this->session->userdata('course_type');
+    $issue_by = $this->session->userdata('school_code');
+    $limit = $this->session->userdata('limit');
+    $center_id = $this->session->userdata('center_id');
+
+    $valid_limits = array(
+        'limit 30', 'limit 30,60', 'limit 60,90', 'limit 90,120',
+        'limit 120,150', 'limit 150,180', 'limit 180,210', 'limit 210,240'
+    );
+    if (
+        !is_string($session) || $session === ''
+        || !is_string($course) || $course === ''
+        || !is_string($issue_by) || $issue_by === ''
+        || !in_array($limit, $valid_limits, TRUE)
+        || !is_numeric($center_id) || (int) $center_id < 1
+    ) {
+        show_error('Select a session, institution, course, print range, and exam center before generating admit cards.', 400);
+        return;
+    }
+
+    $center = $this->db
+        ->select('name_center')
+        ->where('id', (int) $center_id)
+        ->get('center_tb')
+        ->row_array();
+    if (!$center) {
+        show_error('The selected exam center no longer exists. Return to the exam form list and select a valid center.', 400);
+        return;
+    }
+
+    $data['selected_center_name'] = $center['name_center'];
+    $data['row'] = $this->Admin_model->Get_data_admit_course($session, $course, $issue_by, $limit);
+    if (empty($data['row'])) {
+        show_error('No exam forms were found for the selected filters and print range.', 404);
+        return;
+    }
+
+    $this->db
+        ->where('course', $course)
+        ->order_by('exam_date', 'ASC');
+    $data['subject_row'] = $this->db->get('subjects_details_tb')->result_array();
+
+    $this->load->library('pdf');
+    $html = $this->load->view('admin/admit_card_pdf_course', $data, TRUE);
+    if (!is_string($html) || trim($html) === '') {
+        show_error('The admit-card layout could not be rendered.', 500);
+        return;
+    }
+
+    $this->dompdf->load_html($html);
+    $this->dompdf->set_paper('A4', 'portrait');
+    $this->dompdf->render();
+    $filename = preg_replace('/[^A-Za-z0-9._-]/', '_', $issue_by) . '_admit_card_form.pdf';
+    $this->dompdf->stream($filename, array('Attachment' => FALSE));
 }
 
 // public function get_admit_course()
