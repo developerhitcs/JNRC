@@ -185,14 +185,16 @@ authorization tests, and institute-list filter/sort tests.
 
 ### Phase 4 - Passed-out student entry
 
-1. Confirm the required fields for each supported course (B.Sc, M.Sc, Post
-   Basic, and any others), session naming, and duplicate identity rules.
-2. Build course/session-specific forms and server-side validation.
-3. Add a submission state machine: draft -> submitted -> reopened by admin ->
-   submitted. Submitted records are read-only to institutions until admin
-   reopens them.
-4. Add duplicate checks backed by appropriate unique keys. Define how
-   corrections, retries, and duplicates from older imports are handled.
+1. **Confirmed for the initial registration form:** use the supplied JNRC
+   applicant form fields and admin-managed passed-out session labels. Store the
+   selected label directly on each record, without a session foreign key.
+2. Build the institution entry form and server-side validation.
+3. Use a workflow of draft -> submitted -> approved/rejected/correction
+   requested. Submitted and approved records are locked for institutions;
+   rejected or correction-requested records can be edited and resubmitted.
+4. Form numbers may repeat, registration numbers are optional and may repeat;
+   neither field is a unique identity key. Additional course-specific fields or
+   duplicate policy can be decided before expanding beyond this form.
 5. Add an optional template download and Excel import using the repository's
    spreadsheet library only if it can safely parse the approved template.
    Return row-level validation errors and do not partially commit invalid
@@ -200,30 +202,41 @@ authorization tests, and institute-list filter/sort tests.
 6. Add the admin college/session view, search, filters, correction history,
    submission-completeness view, and Excel export.
 
-**Candidate additive tables:** submission header, course-neutral student
-records with approved fields, import job/error records, and audit entries.
-Keep uploaded source files outside the public web root where possible.
+**Initial additive tables:** `passed_out_sessions`,
+`passed_out_records` (including the session-label snapshot), and
+`passed_out_record_audit`. Spreadsheet import/export tables and file storage
+are not part of this initial slice.
 
-**Exit criteria:** course-specific required-field tests, duplicate tests,
-draft/submit/reopen permissions, malformed/oversized spreadsheet tests,
-row-error reporting, and export authorization tests.
+**Exit criteria:** field-validation and duplicate-allowed tests,
+draft/submit/review/edit-lock permissions, migration review, and, for any later
+spreadsheet import/export, malformed/oversized-file tests and export
+authorization tests.
 
 ### Phase 5 - Internal marks
 
-1. Agree on subjects, assessment components, maximum marks, decimal precision,
-   absent/not-applicable codes, and the relationship to existing
-   `subjects_details_tb`.
-2. Add admin assessment configuration by session/course/subject and an entry
-   window with deadlines.
-3. Add institute entry by logged-in institute, course, session, subject, and
-   eligible student. Validate marks against the configured maximum on the
-   server.
-4. Support draft and final submission with locking. Admin may reopen a
-   submission with a required reason and audit record.
-5. Add the admin review screen and Excel export, with institute/session/course
-   filters.
-6. Audit inserts, edits, final submissions, administrative corrections,
-   reopen actions, and window changes.
+1. **Confirmed for initial scope:** start with ANM/GNM and subjects from
+   `subjects_details_tb`; Admin configures theory/practical components and
+   maximum/pass marks by session, course, and subject. Allow up to two decimal
+   places; store absence as a separate status, and leave non-applicable
+   components disabled. B.Sc Nursing is out of the initial scope because its
+   subject catalog is not present in the existing database.
+2. **Implemented locally:** Admin assessment configuration and entry-window
+   deadlines; changes to assessment definitions lock after marks are entered.
+3. **Implemented locally:** institution-scoped entry for exam-form records with
+   assigned roll numbers; server validates component, student eligibility,
+   decimal precision, and configured maximum.
+4. **Implemented locally:** draft and final submission with locking. Admin can
+   reopen a submission with a required reason; institutions can edit only while
+   the configured entry window is open.
+5. **Implemented locally:** Admin review, filters, and Excel-compatible CSV
+   export, with institution/session/course/status filters.
+6. **Implemented locally:** audit records for configuration/window changes,
+   mark inserts/edits, final submissions, and reopen actions.
+
+**Still to complete:** verify the additive migration in each non-local target
+environment; run the boundary, deadline, institution-isolation, draft/submit,
+reopen, audit, and export tests before production use. The migration is applied
+and verified locally in `jnrc_db`.
 
 **Candidate additive tables:** assessment/window configuration, marks
 submission headers, student-subject-assessment entries, and audit entries.
@@ -317,8 +330,10 @@ Follow current CodeIgniter 3 conventions and existing naming:
 3. **Institute grades:** What score range/maximum applies, what initial grade
    bands should be configured, and should changing bands recalculate historical
    grades?
-4. **Passed-out records:** Which fields and duplicate key apply per course?
-   Is there an existing official Excel template to match?
+4. **Passed-out records:** The initial JNRC nurse-registration fields, session
+   snapshot, and duplicate rules are recorded in Phase 4. Confirm
+   course-specific variants and any official Excel template before extending
+   beyond this form.
 5. **Internal marks:** Which assessment types, subjects, maximum marks,
    absence codes, precision rules, and deadlines apply?
 6. **Session backups:** Which records/files must be included, how long should
@@ -333,8 +348,9 @@ Start with **Phase 0 and Phase 1**, then build the smallest end-to-end
 **admit-card release** slice using the confirmed existing `exam_form_tb` fields:
 admin lists and releases one applicant, the correct institute sees and downloads
 that released card only, and the download is audited. The initial Admin,
-Institution, PDF, and public QR verification slice is now in place; extend its
-bulk scope and complete authenticated authorization tests before moving on.
+Institution, PDF, and public QR verification slice is now in place. The
+remaining Module 1 follow-ups are tracked separately and can proceed alongside
+later modules.
 
 This sequence exercises the most important shared security boundary early and
 reuses the existing applicant and institute data before expanding to the other
@@ -348,17 +364,17 @@ modules.
   released-card list/download; reuse of the approved JNRC PDF layout; QR
   generation and public, minimal-data verification. Both migrations are
   applied locally to `jnrc_db`.
-- **Still required for Module 1:** select-all across every filtered result
-  (rather than only the current page), institute/exam-wise bulk PDF downloads,
-  release history/detail screens, and authenticated end-to-end tests for Admin
-  and Institution actions. The local sample database does not include the
-  uploaded image files, so production photo rendering still needs a deployment
-  check.
+- **Module 1 follow-up backlog (recorded before starting Module 3):**
+  select-all across every filtered result (rather than only the current page),
+  institute/exam-wise bulk PDF downloads, release history/detail screens,
+  authenticated end-to-end tests for Admin and Institution actions, and a
+  production photo-rendering check using the real uploaded image files. The
+  current bulk download covers selected cards from the institution's current
+  page, not an exam-wide selection.
 - **Compatibility fixes:** bundled Dompdf's PHP 8.5 `z-index: auto` and
   non-numeric child-height failures were corrected. QR codes are rasterized to
   PNG with GD for compatibility with the bundled Dompdf version.
-- **Not started:** configurable grading; passed-out student entry/import;
-  background session backups; internal-mark configuration and entry.
+- **Not started:** configurable grading and background session backups.
 - The first slice treats one row in `exam_form_tb` as one exam application and
   uses its `batch_session`, `course`, `issue_by`, `ref_no`, `img1`, and
   `admit_card_roll_no` fields. Confirm whether another exam-identity field is
@@ -366,3 +382,39 @@ modules.
 - The SQL migration creates new feature tables only. Back up the target
   database, review the migration, and apply it once in each environment; do not
   run it again after its tables already exist.
+
+### Phase 4 - Passed-out student entry (Module 3)
+
+- Implement the supplied JNRC nurse registration form as an institution-panel
+  workflow. Institution staff enter and attest to each applicant's details,
+  then submit the form for Admin review.
+- Admin-managed pass-out sessions can be added, edited, shown, hidden, and
+  deleted. A submission stores the selected session label as text; it does not
+  reference the session table, so hiding, editing, or deleting a session never
+  changes an existing submission.
+- Admin review supports approval, rejection, and a request for corrections with
+  remarks. Submitted and approved records are locked for institutions; rejected
+  or correction-requested records can be edited and resubmitted.
+- Form numbers are not unique, and registration numbers are optional and not
+  unique. Do not deduplicate student submissions using either field.
+- The form captures the fields visible on the supplied form: applicant and
+  parent name, marital status, age/date of birth, identification, permanent
+  and present address, educational and professional qualification, roll number,
+  nationality, religion, training period, passing date, category, institution,
+  qualifying council/university, registration type, declaration, contact
+  details, email, Aadhaar number, and optional official/registration numbers.
+- **Implemented locally:** additive schema, admin session management,
+  institution submission/editing and verification, and admin review with
+  approval/rejection/correction remarks. Submitted/approved records are locked;
+  rejected/correction-requested records can be edited and resubmitted. The
+  schema migration is a file only; it must be reviewed and applied separately
+  in each environment.
+- **Still to complete for Module 3:** verify the workflow against the approved
+  deployment database after applying the migration, add authenticated
+  end-to-end tests, and decide whether the official form requires spreadsheet
+  import before broad rollout. Admin date-range Excel export uses form creation
+  date. The institution form includes ANM/GNM/B.Sc Nursing selection, structured
+  10th/12th/nursing-course details, and private PDF/JPEG/PNG uploads for the
+  applicant photo and signature, education certificates, Aadhaar, nursing
+  admit cards/marksheets, verification report, transfer certificate, and course
+  completion certificate. Other supporting documents are optional.

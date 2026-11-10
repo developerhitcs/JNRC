@@ -49,6 +49,12 @@
 				  <p>Manage Registration</p>
 				</a>
             </li> 
+			<li class="nav-item">
+				<a class="nav-link" href="<?php echo base_url('admin/passed-out'); ?>">
+					<i class="material-icons">how_to_reg</i>
+					<p>Passed-out Registration</p>
+				</a>
+			</li>
 			<li class="nav-item ">
 				<a class="nav-link" data-toggle="collapse" href="#exam">
 					<i class="material-icons">menu_book</i>
@@ -84,6 +90,12 @@
 							<a class="nav-link" href="<?php echo base_url('admin/admit-cards'); ?>">
 								<i class="material-icons">picture_as_pdf</i>
 								<span class="sidebar-normal">Release Admit Card</span>
+							</a>
+						</li>
+						<li class="nav-item ">
+							<a class="nav-link" href="<?php echo base_url('admin/internal-marks'); ?>">
+								<i class="material-icons">edit_note</i>
+								<span class="sidebar-normal">Internal Marks</span>
 							</a>
 						</li>
 					</ul>

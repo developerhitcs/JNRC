@@ -101,9 +101,9 @@ if($this->session->userdata('school_code')==null || $this->session->userdata('lo
 				</a>
 			</li>
 			<li class="nav-item">
-				<a class="nav-link" href="#" >
+				<a class="nav-link" href="<?php echo base_url('institution/passed-out'); ?>" >
 				  <i class="material-icons">how_to_reg</i>
-				  <p>Student Registration</p>
+				  <p>Passed-out Student Registration</p>
 				</a>
             </li> 			
 			<li class="nav-item ">
@@ -130,7 +130,13 @@ if($this->session->userdata('school_code')==null || $this->session->userdata('lo
 								<i class="material-icons">verified</i>
 								<span class="sidebar-normal">How To Fill Exam Form</span>
 							</a>
-						</li>												
+						</li>
+						<li class="nav-item ">
+							<a class="nav-link" href="<?php echo base_url('institution/internal-marks'); ?>">
+								<i class="material-icons">edit_note</i>
+								<span class="sidebar-normal">Internal Marks</span>
+							</a>
+						</li>
 					</ul>
 				</div>
 			</li>
