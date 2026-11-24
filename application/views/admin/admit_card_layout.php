@@ -19,18 +19,19 @@
 		.card-title { display: block; font-size: 17px; line-height: 22px; font-weight: bold; text-align: center; margin-top: 6px; }
         .exam-layout { border: 1px solid #222; table-layout: fixed; }
 		.exam-layout > tbody > tr > td { border: 1px solid #555; padding: 0; }
-		.exam-layout > tbody > tr > td:first-child { width: 75%; }
-		.details { height: 165px; table-layout: fixed; }
-		.details td { border: 0; padding: 0; }
-		.details-copy { vertical-align: top; padding: 0; }
-		.roll-reference td { border: 1px solid #555; border-top: 0; }
 		.student-details { table-layout: fixed; border-collapse: collapse; border-spacing: 0; font-size: 14px; line-height: 17px; }
 		.student-details td { border: 1px solid #777; padding: 2px 4px; vertical-align: top; }
-		.student-details .field-label { width: 20%; font-weight: bold; }
-		.student-details .field-value { width: 30%; text-align: left; word-wrap: break-word; }
-		.photo-cell, .candidate-signature-cell { width: 25%; text-align: center; }
-		.photo-cell { height: 165px; }
-		.candidate-signature-cell { vertical-align: middle; }
+		.student-details tr:first-child > td { border-top: 0; }
+		.student-details tr:last-child > td { border-bottom: 0; }
+		.student-details tr > td:first-child { border-left: 0; }
+		.student-details tr > td:last-child { border-right: 0; }
+		.student-details .field-label { font-weight: bold; white-space: nowrap; }
+		.student-details .field-value { text-align: left; word-wrap: break-word; }
+		.student-details .roll-number-value { white-space: nowrap; }
+		.student-details .center-row td { height: 75px; vertical-align: middle; }
+		.photo-cell, .candidate-signature-cell { text-align: center; vertical-align: middle; }
+		.candidate-photo { width: 120px; height: auto; max-height: 120px; }
+		.candidate-image-caption { font-size: 10px; line-height: 12px; font-weight: bold; text-align: center; white-space: nowrap; }
 		.section-title { font-weight: bold; text-align: center; }
 		.subjects { table-layout: fixed; }
 		.subjects td, .subjects th { border: 1px solid #555; }
@@ -38,7 +39,7 @@
 		.subjects th { background: #f0f0f0; text-align: left; }
 		.signatures { margin-top: 34px; }
 		.signatures td { text-align: center; vertical-align: bottom; }
-		.signature-image { width: 125px; height: 42px; }
+		.signature-image { width: 100%; height: 35px; }
 		.footer { margin-top: 12px; margin-bottom: 18px; }
 		.registrar-cell { width: 100%; text-align: right; vertical-align: bottom; }
 		.registrar-block { width: 38%; }
@@ -160,62 +161,66 @@ $reg_sign = ac_pick(
 			<col style="width: 8.337%;">
 		</colgroup>
 		<tr>
-			<td colspan="9">
-				<table class="details">
+			<td colspan="12" style="padding: 0;">
+				<table class="student-details">
+					<colgroup>
+						<col width="14%" style="width: 14%;">
+						<col width="34%" style="width: 34%;">
+						<col width="14%" style="width: 14%;">
+						<col style="width: 18%;">
+						<col width="20%" style="width: 20%;">
+					</colgroup>
 					<tr>
-						<td class="details-copy">
-							<table>
-								
-								<tr>
-									<td colspan="2" style="padding: 0;">
-										<table class="student-details">
-											<tr>
-												<td class="field-label"><strong>Roll No.:</strong></td>
-												<td class="field-value"><?php echo ac_e(ac_get($key, 'admit_card_roll_no')); ?></td>
-												<td class="field-label"><strong>Ref No.:</strong></td>
-												<td class="field-value"><?php echo ac_e(ac_get($key, 'ref_no')); ?></td>
-											</tr>
-											<tr>
-												<td class="field-label">Candidate:</td>
-												<td class="field-value"><?php echo ac_e(ac_get($key, 'name')); ?></td>
-												<td class="field-label">Father's Name:</td>
-												<td class="field-value"><?php echo ac_e(ac_get($key, 'father_name')); ?></td>
-											</tr>
-											<tr>
-												<td class="field-label">Date of Birth:</td>
-												<td class="field-value"><?php echo ac_e(ac_get($key, 'dob')); ?></td>
-												<td class="field-label">Course:</td>
-												<td class="field-value"><?php echo ac_e($course); ?></td>
-											</tr>
-											<tr>
-												<td class="field-label">Exam Session:</td>
-												<td class="field-value"><?php echo ac_e(ac_get($key, 'batch_session')); ?></td>
-												<td class="field-label">Exam Center:</td>
-												<td class="field-value"><?php echo ac_e($centre_name); ?></td>
-											</tr>
-											<tr>
-												<td class="field-label">Institution:</td>
-												<td class="field-value" colspan="3"><?php echo ac_e(ac_get($key, 'train_school')); ?></td>
-											</tr>
-										</table>
-									</td>
-								</tr>
-							</table>
+						<td class="field-label" width="14%" style="width: 14%;"><strong>Roll No.:</strong></td>
+						<td class="field-value roll-number-value" width="34%" style="width: 34%;"><?php echo ac_e(ac_get($key, 'admit_card_roll_no')); ?></td>
+						<td class="field-label" width="14%" style="width: 14%;"><strong>Ref No.:</strong></td>
+						<td class="field-value"><?php echo ac_e(ac_get($key, 'ref_no')); ?></td>
+						<td class="photo-cell" rowspan="5">
+							<?php if ($photo !== ''): ?>
+								<img class="candidate-photo" src="<?php echo $photo; ?>" alt="Candidate photo"><br>
+								<span class="candidate-image-caption">Photo of Candidate</span>
+							<?php else: ?>
+								<span class="candidate-image-caption">Candidate photo unavailable</span>
+							<?php endif; ?>
+						</td>
+					</tr>
+					<tr>
+						<td class="field-label">Name:</td>
+						<td class="field-value" colspan="3"><?php echo ac_e(ac_get($key, 'name')); ?></td>
+					</tr>
+					<tr>
+						<td class="field-label">Father's Name:</td>
+						<td class="field-value" colspan="3"><?php echo ac_e(ac_get($key, 'father_name')); ?></td>
+					</tr>
+					<tr>
+						<td class="field-label">Date of Birth:</td>
+						<td class="field-value"><?php echo ac_e(ac_get($key, 'dob')); ?></td>
+						<td class="field-label">Course:</td>
+						<td class="field-value"><?php echo ac_e($course); ?></td>
+					</tr>
+					<tr>
+						<td class="field-label">Exam Session:</td>
+						<td class="field-value"><?php echo ac_e(ac_get($key, 'batch_session')); ?></td>
+						<td class="field-label">Institution:</td>
+						<td class="field-value"><?php echo ac_e(ac_get($key, 'train_school')); ?></td>
+					</tr>
+					<tr class="center-row">
+						<td class="field-label">Exam Center:</td>
+						<td class="field-value" colspan="3"><?php echo ac_e($centre_name); ?></td>
+						<td class="candidate-signature-cell">
+							<?php if ($sign !== ''): ?>
+								<img class="signature-image" src="<?php echo $sign; ?>" alt="Candidate signature"><br>
+							<?php else: ?>
+								Not available<br>
+							<?php endif; ?>
+							<strong class="candidate-image-caption">Signature of Candidate</strong>
 						</td>
 					</tr>
 				</table>
 			</td>
-			<td class="photo-cell" colspan="3">
-				<?php if ($photo !== ''): ?>
-					<img src="<?php echo $photo; ?>" alt="Candidate photo" style="width: 122px; height: 104px;">
-					<div>Photo of Candidate</div>
-				<?php else: ?>
-					<div>Candidate photo unavailable</div>
-				<?php endif; ?>
-			</td>
 		</tr>
 		<tr>
-			<td class="subjects-cell" colspan="9">
+			<td class="subjects-cell" colspan="12">
 				<table class="subjects">
 					<tr><td class="section-title" colspan="3">SUBJECT &amp; DATE OF EXAMINATION</td></tr>
 					<tr>
@@ -240,15 +245,6 @@ $reg_sign = ac_pick(
 					<?php endforeach; ?>
 				</table>
 			</td>
-			<td class="candidate-signature-cell" colspan="3">
-				<?php if ($sign !== ''): ?>
-					<img class="signature-image" src="<?php echo $sign; ?>" alt="Candidate signature"><br>
-					<strong>Signature of Candidate</strong>
-				<?php else: ?>
-					<strong>Signature of Candidate</strong><br>
-					<span>Not available</span>
-				<?php endif; ?>
-			</td>
 		</tr>
 	</table>
 
@@ -256,7 +252,7 @@ $reg_sign = ac_pick(
 		<tr>
 			<td style="width: 33%;">
 				<br>
-				<strong>Signature of Candidate</strong>
+				<strong>Signature of Examinee</strong>
 			</td>
 			<td style="width: 33%;"><br><strong>Signature of Principal</strong></td>
 			<td style="width: 34%;"><br><strong>Signature of Director / Superintendent / Civil Surgeon</strong></td>

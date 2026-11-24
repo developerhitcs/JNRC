@@ -175,9 +175,12 @@ applicants are unchanged.
 
 1. Use **View PDF**, then **Download PDF**, for a released applicant.
 2. Check name, reference/roll, session, course, center, and subject/date/time.
+3. Reload **View PDF** and confirm the QR remains unchanged and still verifies.
 
 **Pass when:** both actions return a readable PDF for the right applicant,
-with the assigned center and scheduled subjects.
+with the assigned center and scheduled subjects. New verification QRs are
+created at release and reused on views/downloads; older released cards with a
+missing saved QR are repaired once.
 
 ### AD-05 — Candidate and Registrar image paths
 

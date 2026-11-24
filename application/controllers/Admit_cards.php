@@ -106,7 +106,34 @@ class Admit_cards extends CI_Controller
         $admin_id = $this->session->userdata('uid');
         $admin_id = is_numeric($admin_id) ? (int) $admin_id : NULL;
 
-        if (!$this->Admit_card_model->set_release_state($student_ids, $status, $admin_id, $center_id)) {
+        $verification_tokens = array();
+        if ($status === 'released') {
+            $students = $this->Admit_card_model->get_release_candidates($student_ids);
+            if (count($students) !== count($student_ids)) {
+                $this->set_message('One or more selected students could not be found. No changes were saved.', 'danger');
+                redirect('admin/admit-cards');
+                return;
+            }
+
+            foreach ($students as $student) {
+                $token = bin2hex(random_bytes(32));
+                $qr = $this->qr_data_uri(site_url('verify/admit-card/' . $token), $student, $token);
+                if ($qr === '') {
+                    $this->set_message('The verification QR code could not be created. No changes were saved.', 'danger');
+                    redirect('admin/admit-cards');
+                    return;
+                }
+                $verification_tokens[(int) $student['id']] = hash('sha256', $token);
+            }
+        }
+
+        if (!$this->Admit_card_model->set_release_state(
+            $student_ids,
+            $status,
+            $admin_id,
+            $center_id,
+            $verification_tokens
+        )) {
             $this->set_message('The release update failed. Choose an existing center and try again; no changes were saved.', 'danger');
             redirect('admin/admit-cards');
             return;
@@ -162,15 +189,12 @@ class Admit_cards extends CI_Controller
             return;
         }
 
-        $token = bin2hex(random_bytes(32));
-
-        $pdf = $this->render_admit_card_pdf($student, $token);
+        $pdf = $this->render_admit_card_pdf($student);
 
         if (!$this->Admit_card_model->record_download(
             (int) $student['id'],
             (int) $institution['id'],
-            $institution['school_code'],
-            hash('sha256', $token)
+            $institution['school_code']
         )) {
             show_error('The admit card is no longer released. Refresh the list and try again.', 409);
             return;
@@ -210,13 +234,8 @@ class Admit_cards extends CI_Controller
             return;
         }
 
-        $token = bin2hex(random_bytes(32));
-        $pdf = $this->render_admit_card_pdf($student, $token);
-
-        if (!$this->Admit_card_model->record_admin_verification_token(
-            (int) $student['id'],
-            hash('sha256', $token)
-        )) {
+        $pdf = $this->render_admit_card_pdf($student);
+        if (!$this->Admit_card_model->confirm_admin_view((int) $student['id'])) {
             show_error('The admit card is no longer released. Refresh the list and try again.', 409);
             return;
         }
@@ -290,18 +309,16 @@ class Admit_cards extends CI_Controller
 
         $downloads = array();
         foreach ($students as $student) {
-            $token = bin2hex(random_bytes(32));
             $filename = preg_replace('/[^A-Za-z0-9._-]/', '_', $student['ref_no']);
             $zip_filename = $filename . '_' . (int) $student['id'] . '.pdf';
-            if (!$zip->addFromString($zip_filename, $this->render_admit_card_pdf($student, $token))) {
+            if (!$zip->addFromString($zip_filename, $this->render_admit_card_pdf($student))) {
                 $zip->close();
                 unlink($zip_path);
                 show_error('An admit card could not be added to the bulk ZIP.', 500);
                 return;
             }
             $downloads[] = array(
-                'student_id' => (int) $student['id'],
-                'token_hash' => hash('sha256', $token)
+                'student_id' => (int) $student['id']
             );
         }
 
@@ -329,14 +346,22 @@ class Admit_cards extends CI_Controller
         unlink($zip_path);
     }
 
-    private function render_admit_card_pdf($student, $token)
+    private function render_admit_card_pdf($student)
     {
-        $dummy_photo = $this->image_data_uri(FCPATH . 'assets_admin/img/dummy-admit-student.jpg');
-        $dummy_signature = $this->image_data_uri(FCPATH . 'assets_admin/img/dummy-admit-signature.png');
-        $registrar_signature = $this->image_data_uri(FCPATH . 'assets_admin/img/dummy-registrar-signature.png');
-        if ($dummy_photo === '' || $dummy_signature === '' || $registrar_signature === '') {
-            show_error('The sample admit-card photo and signature images are missing or invalid.', 500);
-            return '';
+        $qr = $this->released_qr_data_uri($student);
+        if ($qr === '') {
+            $token = bin2hex(random_bytes(32));
+            $qr = $this->qr_data_uri(site_url('verify/admit-card/' . $token), $student, $token);
+            if (
+                $qr === ''
+                || !$this->Admit_card_model->replace_active_verification_token(
+                    (int) $student['id'],
+                    hash('sha256', $token)
+                )
+            ) {
+                show_error('The admit-card verification QR could not be saved. Refresh and try again.', 500);
+                return '';
+            }
         }
 
         $data = array(
@@ -344,14 +369,10 @@ class Admit_cards extends CI_Controller
             'subject_row' => $this->get_exam_subjects($student),
             'selected_center_name' => $student['name_center'],
             'logo_data_uri' => $this->image_data_uri(FCPATH . 'assets/images/logo_pdf.png'),
-            'dummy_photo_uri' => $dummy_photo,
-            'dummy_signature_uri' => $dummy_signature,
-            'registrar_signature_uri' => $registrar_signature,
-            'qr_data_uris' => array($student['id'] => $this->qr_data_uri(
-                site_url('verify/admit-card/' . $token),
-                $student,
-                $token
-            ))
+            'photo_data_uris' => array($student['id'] => $this->student_photo_data_uri($student)),
+            'signature_data_uris' => array($student['id'] => $this->student_signature_data_uri($student)),
+            'registrar_signature_uri' => $this->image_data_uri(FCPATH . 'uploads/signatures/registrarsignature.png'),
+            'qr_data_uris' => array($student['id'] => $qr)
         );
 
         require_once APPPATH . 'third_party/dompdf/autoload.inc.php';
@@ -466,6 +487,24 @@ class Admit_cards extends CI_Controller
         }
 
         return 'data:image/png;base64,' . base64_encode($png);
+    }
+
+    private function released_qr_data_uri($student)
+    {
+        $token_hash = isset($student['verification_token_hash']) ? $student['verification_token_hash'] : '';
+        if (!preg_match('/\A[a-f0-9]{64}\z/', (string) $token_hash)) {
+            return '';
+        }
+
+        $ref_no = isset($student['ref_no']) ? basename((string) $student['ref_no']) : '';
+        if ($ref_no === '' || $ref_no === '.' || $ref_no === '..') {
+            return '';
+        }
+
+        $path = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'exam_form' . DIRECTORY_SEPARATOR
+            . $ref_no . DIRECTORY_SEPARATOR
+            . 'admit_card_qr_' . substr($token_hash, 0, 16) . '.png';
+        return $this->image_data_uri($path);
     }
 
     private function student_upload_directory($student)

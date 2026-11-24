@@ -72,6 +72,7 @@ class Admit_card_model extends CI_Model
     {
         $this->db
             ->select('e.*, c.school_name, c.id AS institution_id, r.status AS release_status, r.center_id, ct.name_center')
+            ->select('(SELECT t.token_hash FROM admit_card_verification_token t WHERE t.student_id = e.id AND t.revoked_at IS NULL ORDER BY t.id DESC LIMIT 1) AS verification_token_hash', FALSE)
             ->from('exam_form_tb e')
             ->join('admit_card_release r', 'r.student_id = e.id', 'inner')
             ->join('college_list c', 'c.school_code = e.issue_by', 'left')
@@ -87,10 +88,30 @@ class Admit_card_model extends CI_Model
         return $this->db->get()->row_array();
     }
 
-    public function set_release_state($student_ids, $status, $admin_id, $center_id = NULL)
+    public function get_release_candidates($student_ids)
+    {
+        return $this->db
+            ->select('id, ref_no')
+            ->where_in('id', $student_ids)
+            ->get('exam_form_tb')
+            ->result_array();
+    }
+
+    public function set_release_state($student_ids, $status, $admin_id, $center_id = NULL, $verification_tokens = array())
     {
         if ($status === 'released' && !$this->db->where('id', $center_id)->get('center_tb')->row_array()) {
             return FALSE;
+        }
+
+        if ($status === 'released') {
+            foreach ($student_ids as $student_id) {
+                if (
+                    !isset($verification_tokens[$student_id])
+                    || !preg_match('/\A[a-f0-9]{64}\z/', (string) $verification_tokens[$student_id])
+                ) {
+                    return FALSE;
+                }
+            }
         }
 
         $this->db->trans_begin();
@@ -146,6 +167,16 @@ class Admit_card_model extends CI_Model
                     ->where('student_id', $student_id)
                     ->where('revoked_at IS NULL', NULL, FALSE)
                     ->update('admit_card_verification_token');
+            } elseif ($status === 'released') {
+                $this->db->set('revoked_at', $now)
+                    ->where('student_id', $student_id)
+                    ->where('revoked_at IS NULL', NULL, FALSE)
+                    ->update('admit_card_verification_token');
+                $this->db->insert('admit_card_verification_token', array(
+                    'student_id' => $student_id,
+                    'token_hash' => $verification_tokens[$student_id],
+                    'created_at' => $now
+                ));
             }
 
             if ($this->db->trans_status() === FALSE) {
@@ -163,16 +194,16 @@ class Admit_card_model extends CI_Model
         return TRUE;
     }
 
-    public function record_download($student_id, $institution_id, $school_code, $token_hash)
+    public function record_download($student_id, $institution_id, $school_code)
     {
         return $this->record_downloads(
-            array(array('student_id' => $student_id, 'token_hash' => $token_hash)),
+            array(array('student_id' => $student_id)),
             $institution_id,
             $school_code
         );
     }
 
-    public function record_admin_verification_token($student_id, $token_hash)
+    public function confirm_admin_view($student_id)
     {
         $this->db->trans_begin();
         $release = $this->db->query(
@@ -185,10 +216,41 @@ class Admit_card_model extends CI_Model
             return FALSE;
         }
 
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+            return FALSE;
+        }
+
+        $this->db->trans_commit();
+        return TRUE;
+    }
+
+    public function replace_active_verification_token($student_id, $token_hash)
+    {
+        if (!preg_match('/\A[a-f0-9]{64}\z/', (string) $token_hash)) {
+            return FALSE;
+        }
+
+        $this->db->trans_begin();
+        $release = $this->db->query(
+            'SELECT status FROM admit_card_release WHERE student_id = ? FOR UPDATE',
+            array($student_id)
+        )->row_array();
+
+        if (!$release || $release['status'] !== 'released') {
+            $this->db->trans_rollback();
+            return FALSE;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $this->db->set('revoked_at', $now)
+            ->where('student_id', $student_id)
+            ->where('revoked_at IS NULL', NULL, FALSE)
+            ->update('admit_card_verification_token');
         $this->db->insert('admit_card_verification_token', array(
             'student_id' => $student_id,
             'token_hash' => $token_hash,
-            'created_at' => date('Y-m-d H:i:s')
+            'created_at' => $now
         ));
 
         if ($this->db->trans_status() === FALSE) {
@@ -256,12 +318,6 @@ class Admit_card_model extends CI_Model
                 'actor_type' => 'institution',
                 'actor_id' => $institution_id,
                 'school_code' => $school_code,
-                'created_at' => $now
-            ));
-
-            $this->db->insert('admit_card_verification_token', array(
-                'student_id' => $student_id,
-                'token_hash' => $download['token_hash'],
                 'created_at' => $now
             ));
 
