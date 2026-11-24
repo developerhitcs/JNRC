@@ -13,7 +13,7 @@
 		.header-logo { width: 14%; text-align: left !important; }
 		.header-title { width: 72%; }
 		.header-qr { width: 14%; text-align: right !important; }
-		.header-logo-image { width: 76px; height: 76px; }
+		.header-logo-image { width: 85px; height: 76px; }
 		.header-qr-image { width: 76px; height: 76px; }
 		.council-name { display: block; font-size: 18px; line-height: 24px; font-weight: bold; text-align: center; white-space: nowrap; }
 		.card-title { display: block; font-size: 17px; line-height: 22px; font-weight: bold; text-align: center; margin-top: 6px; }
@@ -84,27 +84,19 @@ if (!function_exists('ac_pick')) {       // first non-empty value
 	}
 }
 
-/* ---------- Dummy images: replace later by real files / data URIs ---------- */
-$DUMMY_LOGO  = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFoAAABaCAIAAAC3ytZVAAAD1klEQVR42u3cPUjzQBgH8MenBSWTcbV+LVJQZyeHClKROjnVWUHXTgEnByd1FnRx6yRCK9KW2tRZcHAKCNqlTtI6BYdi3iFQ+sba5uPukrvrTb3jDwk/uFzhHzJ2fX1tGAaMBgAAxA3DSCaTqVRqZKHrOgJAKpXSdX1kYRgG2hPJRXRdt/cHdpekFela/Mchp0ivhZNDNhGHRR8OeUR+W/TnkEGkr8WfHGKL/GUxiENUkQEWQzjEExlsMZxDJJGhFq44xBBxY+GWg3cRlxYeOPgVcW/hjYNHEU8Wnjn4EvFq4YeDFxEfFj45oi/iz8I/R5RFfFsE4oimSBCLoBxREwloQYAjOiLBLchwREGEiAUxjnBFSFmQ5AhLhKAFYQ72ImQtyHOwFCFuQYWDjQgNC1octEUoWVDkoCdCz4IuBw0RqhbUOciK0LZgwUFKhIEFI47gImws2HEEEWFmwZTDnwhLC9YcXkUYW4TA4V6EvUU4HG5EQrEIjWOwSFgWABBnc5n9/f2rq6velcfHx2q1WigUFEXZ3NxcW1sDgFqtVigUJicnn56e9vb2pqam7GSlUonH451Op5vkm8MxXl5e6vX60dGRoijlcrlWq6mqallWuVw+Pz+PxWLFYvHy8lLTtN6kaZqnp6eqqi4vLwvFcXd3t7u7qygKAKTT6Xa7XSwW2+32wcFBLBYDgI2NjdfX15+fn96koijZbPbm5oYeRzjPjo+Pj/n5+e50Z2fn7e3NNM2ZmRl7ZWJiIpfLIaIjubCw0Gw2RdssjlGv18fHx7+/v+3p/f398/Pz19fX2dmZI2lZloAny/T09Pv7e/ccmZubSyQSs7Ozt7e3ALC1tZXL5T4/Px1JAGg0GolEQjSOTCaTz+dN09R1fXV1NZ/Pb29vr6+vNxqNh4cHAKhUKojYmwQA0zTtJPebpdPpHB8f278XFxez2Wyr1dI0TVXVarWaTqeXlpYsy2o2m6VSqVQqZTIZ+5m6srLSarVOTk7sg9ZO0rvPMU3TDg8PIWJdUSj/xC4uLjCavVlYnR5GtkMMRQSj3CGyF8GI96mMRTD6fSpLEeSiW2Ymgrx0y2xEkKOenYEI8tWz0xZB7t45oCqC3L1zQFUEubOgKoI8WtATQU4tKIkgvxY0RJBrC+IiyLsFWREUwIKgCIphQUoEhbEgIoIiWQQXQcEsAoqgeBZBRFBIC98iKKqFPxEU2MKHCIpt4VUEhbfwJIIyWLgXQUksXIqgPBZuRFAqi6EiKJvFYBGU0GKACMpp8ZcISmvRVwRltvgtgpJbOETi3W9ijz4en0wm/wEyFsMy8MVzAwAAAABJRU5ErkJggg==';
-$DUMMY_PHOTO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIIAAABuCAIAAABk51xTAAAEyElEQVR42u2bP0szQRDGx2Gr68RSRY2ggWgXsBLZRi0UbA1YWJzgNxBip1b5AIoWikLyART806yWAStROKsookUKsbognOQt8hIlMRr1bm/2braLmYSd+2WeZ2696djb23McB3iFuoTjOMlkUkrJ1yKspZRCAJBSKqX4coTFwHEcUXtRJ8FloRNA7YK/Y6gDUEoxCT0MPl5nbHibBUo/g08wMAn9DD7HwCQ0MwAA0eoDbNoBGfLn9w1ffJJNO+gi+EaUWKB0MmgLA5MImkG7GJhEoAx+gIFJBMfgG4vm9imIpsgHDNw++VsEvxElFqiAGPweA5PwkcGfMDAJvxj8xhvYtP9uyP5jiLlp+5U1+rWhGAqUj7889HFbsSLhb/Wjv5uLCQnfFRh932LkSQThgiKIjUa1fQouKRHQjqPXPgWaCwa69cgIVNC/Jww6gQiQ0FDTqCENo0no0VWhJxkTTVvnhoW2rMwybc37RM3pGSFQ+n8rqD9J4iRCqVcMJVWyJMLSTAwrYYIkQvQtEWLadNqn0Lchws2fQvtEoXlDCmoQokARaaBJYAiLBJ2bGCoY9JMgdSMpgNLSY9oEj1VoYdBg2jRPUxBIroAEiuyJFlEMQZCgfKpIF4O/JIif7JLG4BcJ+qfrAsivv7RPpvyvyQAMv26fDHouBMGc9SOBMuvZHJMwtE/CuOejDMPQDgkTn1Gj6w2Li4uDg4MA8Pb2trCwkEgkbNve2dmpk9jf39/d3QWAi4uLs7MzIcTLy0sqlVpaWrq8vDw5OQGA29vb4eFhAJicnKxUKrUwz/Omp6fHx8cZQxs7E2J1dRUAHh4etre319bWGmoin88rpbq6us7Pz7PZbLFYHBsby+Vy19fX6XQ6nU4DgG3btS+5uro6Pj7OZrOWZbmum8vlOjs7R0ZGWJTaXb29veVyuZVAHRwcZDKZYrEopbQsa35+/vDwsDny6Ogok8lYlgUAX4Qxhpbr5uamr6+v1buVSuX+/r5uBgMDA4+Pj81hT09P/f399ZetwliUGpfneevr69Vq1bIs27brf/kYAACvr68TExN1W65Wq+18eZthjOHdG1r9xbZtpVQikSiVSjXTllLe3d319PQ0f1t3d3epVBoaGqq9bBXGovTjUwrP86SUMzMzhULBdV0p5enp6dbW1uzsbHN8PQwAXNctFAqfhnE1/PioLp/PA8Do6Ojz8/PGxkatE52bmyuXy6lUquEjDWFTU1PNMSGujpWVleXl5Yg96W7WHdzm5iZGctrAuIkKjOrEh1kkRIQnPgyabRHRnvgwZbYF4zDxQV+gMCZTN8RJYHymbiiTwFhNPpElIeI2BkuzfRIxHHsi2D5hbEfPSAkUxnn8jw4JjPkIJhESIuYjmERMW8SzCKiZNjIDCgKFzIACCWQGFEggM6BAQsSqKSLbPgkuAgrtEzIDCgKFzIACCWQGFEgINmQKpi24CCiYNjIDCgKFzIACCWQGFEggM6BAQnBTRKF9ElwEFNonZAYUBAqZAQUSyAwokBBsyBRMW3ARUDBtZAYUBAqZAQUSyAwokEBmQIGE4KaIQvskuAgotE/IDCgIFDIDCiSQGVAgIdiQKZi24CII3bT/Y1BKOY7jOA5fmlBWMpn8B/mhatDky7k2AAAAAElFTkSuQmCC';
-$DUMMY_SIGN  = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAAyCAIAAAAx7rVNAAAElklEQVR42u3cTyh8WxwA8O/MPX4kZjAl+bcgzKDEzG5kjJKibIiNlBpEbETdBZIUympKwsKUTEQ2/iQLNyyULsmULpqoMbKZTJOFyZ2Ztzj9zpu8936P9/y45/c739Wdc+6Zzjmfe7733G4zKofDAQCSJAELCkOv1yNJkrq6ukiR1Wpl86L8EAQBH0iShF7JkTpmqWQ5ovMn4V9XIbNUslx0oH9qxiwVLvfvhMxS4XLvIGSWypT7L4TMUlFy/4uQWSpB7mMImeUXyn0wIbP8fLmfRcgsP03upxP+zpafPFL0aQP75S2/alzo84f6i1l++SjQFw6eakvl9BkpYTooslRgD5GiJkixlkq+tpAyL3aFWFKR4REoO77Ekq57MwJK4hMsKd0hI6AtPtyS9mcbJRLe3t4uLy/LssxxXEdHh06na29vn5+fB4C9vT1BEDiOi4+Pt9lsKSkpANDa2pqamlpXV4cNyMmYx+Fw2O12rVYriuLOzg4AXF5eFhQU+P3+wsLCw8PDhYUFfDJp2NbWlpubG4lEnp+fW1paDAYDLsGnlZWV1dbWMsIfxezs7MDAQEpKyvHxsdPp7O3txeUul0sUxZGREY7jNjY25ubmeJ4HgNjYWI1Gk5aWhteTLMvkq05PT2tqas7OziwWi8lkMplMgiC43W6z2Yy9j46O/mZSEBocHAQAj8czPT09MTFBStgqfFMEAoGXlxcAMBqNWq2WlG9tbTU1NXEcBwDV1dXX19fhcFitVgNAQ0PD2tra0NAQADidTmIZDAatVuvKyko4HCbZ0ul0vjFnZmZmPj4+skT67mhubh4dHS0pKSkvLy8sLCTld3d3WVlZ+DguLq6vr49UFRUVra+vX1xc4POxkCiKCQkJkiTd3Nz09PQg9O7Bulyu6A4wwrdGRUWF0WgURXFxcdFkMjU0NOByspK2t7dPT0/9fv/U1BRp1djYuLq6Ojw8THYo+/v7wWDQ5/PJsry8vJyRkfHGPYssy2NjY6FQ6P7+fnJykpSQKywvL48R/iiLPjw85OfnWyyW0tJSnucJYVpamsfjycnJqa2trays7O7ujm5oMBgCgcDS0pIsy1arNRwO7+/vj4+PA8D5+fnZ2RnGEwRBlmVBEPBHlUqFs3EoFMI5OfpeuLm5eXBwUF9fr+R7oVppHVKpVHa73efzAcDT05NOpyNVVVVVa2troVAIAHZ3d8mMYxJBEGw2m9vtxgnz6uoqOzsbvv/wwOVykXshQshqteImSUlJuOr8/JzsOUkUFxe73W6WSN8XiYmJNpvNbrfHxMSo1erOzk5SZTabvV4vz/PJyclmszkSieCEiUnIAsJboZOTk6KiIlz47ds3jUbj9XpxLo1+CtTr9SQb9/f3v+pMenq6x+OJRCLRiTQvL6+5uVlBFz3P89E/i4Hf+C0Pjc/4MzMziMnR/v4SMTnaLRGTo90SMTnaLRGTo90SMTnaLRGTo90SMTnaLRGTo90SMTnaLRGTo90SMTnaLRGTo90SMTnaLRGTo90SMTnaLRGTo90SMTnaLREAzMzM6PV6+P7niK8OWCg8/gAnH6fDLQ28hwAAAABJRU5ErkJggg==';
-$DUMMY_QR    = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGkAAABpCAIAAAC24JptAAACE0lEQVR42u2czQ2DMAxGTdU5YBIWYQM2YBM2yCJMAovQa5VDRMjn0CrPNwSlzZN/ajtxZ7Wk7/vE3Wmavi9DCNfvRnIcR50VdT/Cbtu278txHK/ffYrdyxDYwe6f5B1dn+cpc6XdfWcaObgS8VsReofNwg52rcaKEn+f5ZWz/u5mvWoYhjorQu+wWdjBrhXp0t6xxLNGn933/fqr0nWU9MNRHcVvRegdNgs72BEr1J41qrkLq0yRRHkFsQKbhR0CO/OtQQmL/cLMwX6jfYHewQ52sGs1VpQ0pP0iyVMtdvQOm4Ud7BAzs25ZlnmeJS5cuHez5OE6S1jXFb3DZmEHu2ZiRVYbQfh3PyuwZNWv6kQhYgU2CzvYGf0K/b7XrIf9/H1WUEr/KvQOm4Ud7KhBFfenhUmIn/u/LeQV2CzsYNdwDUrYCniq5yCMM+kvQu+wWdjBjrxCvdHVL+sQBqWs34zeYbOwg10r8g4hpEfx1Sn++PXUhcGBfVDYLOxgx7ltqzortVqa4XcGEL3DZmEHO2Z8qA/BlczVFiYhqkhCXoHNwg52xp5Z9zmz1abQmq4fH91F77BZ2MGOvOLRObN+Z6+FMQq9w2ZhBztixaNzZoVdBWHoMGpQ2CzsYEes8O1XlOQVJZUiv6Ma6B02CzvYGXNmreYk2bSD9xseZXe7KOQV2Czs2pppZJmDHW7fLXmz3xd9APEzQTJKshUrAAAAAElFTkSuQmCC';
-
 $rows        = (isset($row) && is_array($row)) ? $row : array();
 $subjects    = (isset($subject_row) && is_array($subject_row)) ? $subject_row : array();
 $centre_name = isset($selected_center_name) ? $selected_center_name : '';
-$root        = rtrim(isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '', '/');
-$fcpath      = defined('FCPATH') ? FCPATH : ($root . '/');
+$fcpath      = defined('FCPATH') ? FCPATH : '';
 
 $logo = ac_pick(
 	isset($logo_data_uri) ? $logo_data_uri : '',
-	ac_file_uri($fcpath . 'assets/images/logo_pdf.png'),
-	$DUMMY_LOGO
+	$fcpath !== '' ? ac_file_uri($fcpath . 'assets/images/logo_pdf.png') : ''
 );
 $reg_sign = ac_pick(
-	ac_file_uri($fcpath . 'uploads/signatures/registrarsignature.png'),
-	isset($registrar_signature_uri) ? $registrar_signature_uri : ''
-);   // optional
+	isset($registrar_signature_uri) ? $registrar_signature_uri : '',
+	$fcpath !== '' ? ac_file_uri($fcpath . 'uploads/signatures/registrarsignature.png') : ''
+);
 ?>
 
 <?php foreach ($rows as $key )
@@ -113,22 +105,9 @@ $reg_sign = ac_pick(
 	$kid    = ac_get($key, 'id');
 	$course = ac_get($key, 'course');
 
-	$photo = ac_pick(
-		(isset($photo_data_uris) && is_array($photo_data_uris)) ? ac_get($photo_data_uris, $kid) : '',
-		ac_file_uri($root . '/uploads/exam_form/' . ac_get($key, 'ref_no') . '/' . ac_get($key, 'img1')),
-		isset($dummy_photo_uri) ? $dummy_photo_uri : '',
-		$DUMMY_PHOTO
-	);
-	$sign = ac_pick(
-		(isset($signature_data_uris) && is_array($signature_data_uris)) ? ac_get($signature_data_uris, $kid) : '',
-		ac_file_uri($root . '/uploads/exam_form/' . ac_get($key, 'ref_no') . '/' . ac_get($key, 'img2')),
-		isset($dummy_signature_uri) ? $dummy_signature_uri : '',
-		$DUMMY_SIGN
-	);
-	$qr = ac_pick(
-		(isset($qr_data_uris) && is_array($qr_data_uris)) ? ac_get($qr_data_uris, $kid) : '',
-		$DUMMY_QR
-	);
+	$photo = (isset($photo_data_uris) && is_array($photo_data_uris)) ? ac_get($photo_data_uris, $kid) : '';
+	$sign = (isset($signature_data_uris) && is_array($signature_data_uris)) ? ac_get($signature_data_uris, $kid) : '';
+	$qr = (isset($qr_data_uris) && is_array($qr_data_uris)) ? ac_get($qr_data_uris, $kid) : '';
 
 	$filtered_subjects = array_values(array_filter($subjects, function ($subject) use ($course) {
 		return ac_get($subject, 'course') === $course;
@@ -145,7 +124,9 @@ $reg_sign = ac_pick(
 	<table class="header">
 		<tr>
 			<td class="header-logo">
-				<img class="header-logo-image" src="<?php echo $logo; ?>" alt="JNRC logo">
+				<?php if ($logo !== ''): ?>
+					<img class="header-logo-image" src="<?php echo $logo; ?>" alt="JNRC logo">
+				<?php endif; ?>
 			</td>
 
 			<td class="header-title">
@@ -154,7 +135,9 @@ $reg_sign = ac_pick(
 				<div class="card-title"><u>ADMIT CARD</u></div>
 			</td>
 			<td class="header-qr">
-				<img class="header-qr-image" src="<?php echo $qr; ?>" alt="Admit card verification QR code">
+				<?php if ($qr !== ''): ?>
+					<img class="header-qr-image" src="<?php echo $qr; ?>" alt="Admit card verification QR code">
+				<?php endif; ?>
 			</td>
 
 		</tr>
@@ -223,8 +206,12 @@ $reg_sign = ac_pick(
 				</table>
 			</td>
 			<td class="photo-cell" colspan="3">
-				<img src="<?php echo $photo; ?>" alt="Candidate photo" style="width: 122px; height: 104px;">
-				<div>Photo of Candidate</div>
+				<?php if ($photo !== ''): ?>
+					<img src="<?php echo $photo; ?>" alt="Candidate photo" style="width: 122px; height: 104px;">
+					<div>Photo of Candidate</div>
+				<?php else: ?>
+					<div>Candidate photo unavailable</div>
+				<?php endif; ?>
 			</td>
 		</tr>
 		<tr>
@@ -254,8 +241,13 @@ $reg_sign = ac_pick(
 				</table>
 			</td>
 			<td class="candidate-signature-cell" colspan="3">
-				<img class="signature-image" src="<?php echo $sign; ?>" alt="Candidate signature"><br>
-				<strong>Signature of Candidate</strong>
+				<?php if ($sign !== ''): ?>
+					<img class="signature-image" src="<?php echo $sign; ?>" alt="Candidate signature"><br>
+					<strong>Signature of Candidate</strong>
+				<?php else: ?>
+					<strong>Signature of Candidate</strong><br>
+					<span>Not available</span>
+				<?php endif; ?>
 			</td>
 		</tr>
 	</table>
