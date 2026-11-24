@@ -15,7 +15,7 @@
                         <form method="get" action="<?php echo base_url('admin/internal-marks'); ?>">
                             <div class="row">
                                 <div class="col-md-3">
-                                    <label>Examination session</label>
+                                    <label>Examination session / batch</label>
                                     <select class="form-control" name="session">
                                         <option value="">All sessions</option>
                                         <?php $sessions = array(); foreach ($contexts as $context) { $sessions[$context['session_label']] = $context['session_label']; } ?>

@@ -221,17 +221,24 @@ authorization tests.
    components disabled. B.Sc Nursing is out of the initial scope because its
    subject catalog is not present in the existing database.
 2. **Implemented locally:** Admin assessment configuration and entry-window
-   deadlines; changes to assessment definitions lock after marks are entered.
+   deadlines; saved windows are listed separately from their view/edit page,
+   which shows stored enabled, maximum, and pass-mark settings. Changes to
+   assessment definitions lock after marks are entered.
 3. **Implemented locally:** institution-scoped entry for exam-form records with
-   assigned roll numbers; server validates component, student eligibility,
-   decimal precision, and configured maximum.
+   assigned roll numbers; configured windows appear for matching institution
+   course types, and the server validates student ownership, component,
+   eligibility, decimal precision, and configured maximum.
 4. **Implemented locally:** draft and final submission with locking. Admin can
-   reopen a submission with a required reason; institutions can edit only while
-   the configured entry window is open.
+   edit marks directly with a required reason and before/after audit details.
+   Admin can reopen a submission with a required reason to explicitly grant
+   institution correction access, including after the normal entry window has
+   closed; resubmission locks it again.
 5. **Implemented locally:** Admin review, filters, and Excel-compatible CSV
    export, with institution/session/course/status filters.
 6. **Implemented locally:** audit records for configuration/window changes,
-   mark inserts/edits, final submissions, and reopen actions.
+   institution mark inserts/edits with student snapshots, final submissions,
+   Admin mark edits, and reopen actions. Submission review displays the audit
+   history and value changes.
 
 **Still to complete:** verify the additive migration in each non-local target
 environment; run the boundary, deadline, institution-isolation, draft/submit,
@@ -369,8 +376,14 @@ modules.
   institute/exam-wise bulk PDF downloads, release history/detail screens,
   authenticated end-to-end tests for Admin and Institution actions, and a
   production photo-rendering check using the real uploaded image files. The
-  current bulk download covers selected cards from the institution's current
-  page, not an exam-wide selection.
+  PDF now reads candidate photos/signatures from
+  `uploads/exam_form/{ref_no}/{img1,img2}` without sample-image fallbacks; the
+  Registrar signature is read from
+  `uploads/signatures/registrarsignature.png` when present. The local sample
+  uploads do not include candidate photos/signatures or the Registrar file, so
+  verify the final images after the approved files are deployed. The current
+  bulk download covers selected cards from the institution's current page, not
+  an exam-wide selection.
 - **Compatibility fixes:** bundled Dompdf's PHP 8.5 `z-index: auto` and
   non-numeric child-height failures were corrected. QR codes are rasterized to
   PNG with GD for compatibility with the bundled Dompdf version.

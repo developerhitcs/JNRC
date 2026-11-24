@@ -5,7 +5,7 @@ class Internal_marks_model extends CI_Model
 {
     public function get_admin_contexts()
     {
-        return $this->db->distinct()
+        $contexts = $this->db->distinct()
             ->select('e.batch_session AS session_label, e.course')
             ->from('exam_form_tb e')
             ->join('subjects_details_tb s', 's.course = e.course')
@@ -13,6 +13,40 @@ class Internal_marks_model extends CI_Model
             ->where('e.admit_card_roll_no IS NOT NULL', NULL, FALSE)
             ->order_by('e.batch_session', 'DESC')
             ->order_by('e.course', 'ASC')
+            ->get()
+            ->result_array();
+        $context_keys = array();
+        foreach ($contexts as $context) {
+            $context_keys[$context['session_label'] . "\0" . $context['course']] = TRUE;
+        }
+        $configured_contexts = $this->db->select('session_label, course')
+            ->order_by('session_label', 'DESC')
+            ->order_by('course', 'ASC')
+            ->get('internal_marks_windows')
+            ->result_array();
+        foreach ($configured_contexts as $context) {
+            $key = $context['session_label'] . "\0" . $context['course'];
+            if (!isset($context_keys[$key])) {
+                $contexts[] = $context;
+                $context_keys[$key] = TRUE;
+            }
+        }
+        return $contexts;
+    }
+
+    public function get_configured_windows()
+    {
+        return $this->db->select(
+            'w.id, w.session_label, w.course, w.starts_at, w.ends_at, w.is_open,
+             (SELECT COUNT(*) FROM internal_marks_assessments a
+              WHERE a.session_label = w.session_label
+                AND a.course = w.course
+                AND a.is_enabled = 1) AS enabled_component_count',
+            FALSE
+        )
+            ->from('internal_marks_windows w')
+            ->order_by('w.session_label', 'DESC')
+            ->order_by('w.course', 'ASC')
             ->get()
             ->result_array();
     }
@@ -218,16 +252,12 @@ class Internal_marks_model extends CI_Model
         return TRUE;
     }
 
-    public function get_institution_contexts($school_code, $course_type)
+    public function get_institution_contexts($course_type)
     {
         return $this->db->distinct()
             ->select('w.session_label, w.course, w.starts_at, w.ends_at, w.is_open')
             ->from('internal_marks_windows w')
-            ->join('exam_form_tb e', 'e.batch_session = w.session_label AND e.course = w.course')
-            ->where('e.issue_by', $school_code)
-            ->where('e.admit_card_roll_no !=', '')
-            ->where('e.admit_card_roll_no IS NOT NULL', NULL, FALSE)
-            ->like('e.course', ' ' . $course_type, 'before')
+            ->where('w.course LIKE', '% ' . $course_type)
             ->order_by('w.session_label', 'DESC')
             ->order_by('w.course', 'ASC')
             ->get()
@@ -260,6 +290,25 @@ class Internal_marks_model extends CI_Model
             ->result_array();
     }
 
+    public function find_eligible_students_by_identifier($session, $course, $school_code, $identifier)
+    {
+        return $this->db->select('id, name, father_name, admit_card_roll_no, ref_no')
+            ->from('exam_form_tb')
+            ->where('batch_session', $session)
+            ->where('course', $course)
+            ->where('issue_by', $school_code)
+            ->where('admit_card_roll_no !=', '')
+            ->where('admit_card_roll_no IS NOT NULL', NULL, FALSE)
+            ->group_start()
+                ->where('admit_card_roll_no', $identifier)
+                ->or_where('ref_no', $identifier)
+            ->group_end()
+            ->order_by('id', 'ASC')
+            ->limit(2)
+            ->get()
+            ->result_array();
+    }
+
     public function get_submission($session, $course, $institution_id)
     {
         return $this->db->where('session_label', $session)
@@ -283,15 +332,69 @@ class Internal_marks_model extends CI_Model
         return $entries;
     }
 
+    public function get_student_assessment_entries($submission_id, $student_id)
+    {
+        $rows = $this->db->where('submission_id', $submission_id)
+            ->where('student_id', $student_id)
+            ->get('internal_marks_entries')
+            ->result_array();
+        $entries = array();
+        foreach ($rows as $row) {
+            $entries[$row['assessment_id']] = $row;
+        }
+        return $entries;
+    }
+
+    public function save_student_assessments($context, $student_id, $assessment_entries, $institution, $actor_id, $submit)
+    {
+        if (empty($assessment_entries)) {
+            return array('ok' => FALSE, 'error' => 'Enter marks for at least one configured subject component.');
+        }
+        if (!$this->db->trans_begin()) {
+            return array('ok' => FALSE, 'error' => 'Marks could not be saved. Please try again.');
+        }
+
+        $assessment_ids = array_keys($assessment_entries);
+        $final_assessment_id = end($assessment_ids);
+        $result = array('ok' => TRUE);
+        foreach ($assessment_entries as $assessment_id => $entry) {
+            $result = $this->save_marks(
+                $context,
+                (int) $assessment_id,
+                array((int) $student_id => $entry),
+                $institution,
+                $actor_id,
+                $submit && (int) $assessment_id === (int) $final_assessment_id
+            );
+            if (!$result['ok']) {
+                if ($submit && isset($result['submission_id'])) {
+                    $this->db->trans_commit();
+                    return $result;
+                }
+                $this->db->trans_rollback();
+                return $result;
+            }
+        }
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+            return array('ok' => FALSE, 'error' => 'Marks could not be saved. Please try again.');
+        }
+        $this->db->trans_commit();
+        return $result;
+    }
+
     public function save_marks($context, $assessment_id, $entries, $institution, $actor_id, $submit)
     {
         $this->db->trans_begin();
+        $submission = $this->get_submission($context['session'], $context['course'], $institution['id']);
         $window = $this->db->query(
             'SELECT * FROM internal_marks_windows WHERE session_label = ? AND course = ? FOR UPDATE',
             array($context['session'], $context['course'])
         )->row_array();
         $now = date('Y-m-d H:i:s');
-        if (!$this->window_is_open($window, $now)) {
+        $admin_reopened = $submission && $submission['status'] === 'reopened';
+        if (!$admin_reopened && !$this->window_is_open($window, $now)) {
             $this->db->trans_rollback();
             return array('ok' => FALSE, 'error' => 'The internal marks entry window is not open.');
         }
@@ -308,7 +411,6 @@ class Internal_marks_model extends CI_Model
             return array('ok' => FALSE, 'error' => 'The selected assessment is not configured.');
         }
 
-        $submission = $this->get_submission($context['session'], $context['course'], $institution['id']);
         if ($submission && $submission['status'] === 'submitted') {
             $this->db->trans_rollback();
             return array('ok' => FALSE, 'error' => 'This marks submission is locked. Contact JNRC if it needs to be reopened.');
@@ -382,7 +484,11 @@ class Internal_marks_model extends CI_Model
                     $this->db->where('id', $previous['id'])->delete('internal_marks_entries');
                     $changes[] = array(
                         'student_id' => (int) $student_id,
+                        'student_name' => $previous['student_name_snapshot'],
+                        'roll_number' => $previous['roll_number_snapshot'],
                         'assessment_id' => (int) $assessment_id,
+                        'subject_code' => $assessment['subject_code'],
+                        'component' => $assessment['component'],
                         'from_status' => $previous['attendance_status'],
                         'from_marks' => $previous['marks_obtained'],
                         'to_status' => NULL,
@@ -415,7 +521,11 @@ class Internal_marks_model extends CI_Model
             }
             $changes[] = array(
                 'student_id' => (int) $student_id,
+                'student_name' => $student['name'],
+                'roll_number' => $student['admit_card_roll_no'],
                 'assessment_id' => (int) $assessment_id,
+                'subject_code' => $assessment['subject_code'],
+                'component' => $assessment['component'],
                 'from_status' => $previous ? $previous['attendance_status'] : NULL,
                 'from_marks' => $previous ? $previous['marks_obtained'] : NULL,
                 'to_status' => $entry['attendance_status'],
@@ -424,8 +534,7 @@ class Internal_marks_model extends CI_Model
         }
 
         $this->db->where('id', $submission_id)->update('internal_marks_submissions', array(
-            'status' => 'draft',
-            'submitted_at' => NULL,
+            'status' => $admin_reopened ? 'reopened' : 'draft',
             'updated_by' => $actor_id,
             'updated_at' => $now
         ));
@@ -468,7 +577,7 @@ class Internal_marks_model extends CI_Model
                 $this->db->trans_commit();
                 return array(
                     'ok' => FALSE,
-                    'error' => 'This assessment was saved as a draft. Complete every configured assessment for all students before final submission.',
+                    'error' => 'These marks were saved as a draft. Complete every configured assessment for all students before final submission.',
                     'submission_id' => $submission_id
                 );
             }
@@ -485,7 +594,13 @@ class Internal_marks_model extends CI_Model
                 'actor_id' => $actor_id,
                 'action' => 'final_submitted',
                 'reason' => NULL,
-                'details' => NULL,
+                'details' => json_encode(array(
+                    'session' => $context['session'],
+                    'course' => $context['course'],
+                    'institution' => $institution['school_code'],
+                    'entry_count' => (int) $this->db->where('submission_id', $submission_id)
+                        ->count_all_results('internal_marks_entries')
+                )),
                 'created_at' => $now
             ));
         }
@@ -539,14 +654,158 @@ class Internal_marks_model extends CI_Model
             ->result_array();
     }
 
+    public function get_submission_assessments($submission_id)
+    {
+        $submission = $this->get_submission_detail($submission_id);
+        if (!$submission) {
+            return array();
+        }
+        $assessments = $this->db->where('session_label', $submission['session_label'])
+            ->where('course', $submission['course'])
+            ->where('is_enabled', 1)
+            ->order_by('subject_id', 'ASC')
+            ->order_by('component', 'ASC')
+            ->get('internal_marks_assessments')
+            ->result_array();
+        foreach ($assessments as &$assessment) {
+            $assessment['entries'] = array_values(
+                $this->get_assessment_entries($submission_id, $assessment['id'])
+            );
+        }
+        unset($assessment);
+        return $assessments;
+    }
+
     public function get_submission_audit($submission_id)
     {
-        return $this->db->select('actor_type, action, reason, created_at')
+        return $this->db->select('actor_type, actor_id, action, reason, details, created_at')
             ->from('internal_marks_audit')
             ->where('submission_id', $submission_id)
             ->order_by('created_at', 'DESC')
             ->get()
             ->result_array();
+    }
+
+    public function admin_update_assessment($submission_id, $assessment_id, $entries, $reason, $admin_id)
+    {
+        $this->db->trans_begin();
+        $submission = $this->db->query(
+            'SELECT * FROM internal_marks_submissions WHERE id = ? FOR UPDATE',
+            array($submission_id)
+        )->row_array();
+        if (!$submission) {
+            $this->db->trans_rollback();
+            return array('ok' => FALSE, 'message' => 'Submission was not found.');
+        }
+
+        $assessment = $this->db->where('id', $assessment_id)
+            ->where('session_label', $submission['session_label'])
+            ->where('course', $submission['course'])
+            ->where('is_enabled', 1)
+            ->limit(1)
+            ->get('internal_marks_assessments')
+            ->row_array();
+        if (!$assessment) {
+            $this->db->trans_rollback();
+            return array('ok' => FALSE, 'message' => 'The selected assessment is not configured for this submission.');
+        }
+
+        $existing_rows = $this->db->query(
+            'SELECT * FROM internal_marks_entries
+             WHERE submission_id = ? AND assessment_id = ?
+             FOR UPDATE',
+            array($submission_id, $assessment_id)
+        )->result_array();
+        $existing_by_student = array();
+        foreach ($existing_rows as $row) {
+            $existing_by_student[(int) $row['student_id']] = $row;
+        }
+        $changes = array();
+        $now = date('Y-m-d H:i:s');
+        foreach ($entries as $student_id => $entry) {
+            if (!isset($existing_by_student[$student_id])) {
+                $this->db->trans_rollback();
+                return array('ok' => FALSE, 'message' => 'A student entry does not belong to this submission and assessment.');
+            }
+            if (!in_array($entry['attendance_status'], array('present', 'absent'), TRUE)) {
+                $this->db->trans_rollback();
+                return array('ok' => FALSE, 'message' => 'Choose Present or Absent for each edited student.');
+            }
+            if ($entry['attendance_status'] === 'present') {
+                if (
+                    !is_string($entry['marks_obtained'])
+                    || !preg_match('/\A(?:[0-9]+(?:\.[0-9]{1,2})?|\.[0-9]{1,2})\z/', $entry['marks_obtained'])
+                    || (float) $entry['marks_obtained'] > (float) $assessment['max_marks']
+                ) {
+                    $this->db->trans_rollback();
+                    return array('ok' => FALSE, 'message' => 'Marks must be valid and within the configured maximum.');
+                }
+                $new_marks = number_format((float) $entry['marks_obtained'], 2, '.', '');
+            } else {
+                if ($entry['marks_obtained'] !== '') {
+                    $this->db->trans_rollback();
+                    return array('ok' => FALSE, 'message' => 'Absent students cannot have a numeric mark.');
+                }
+                $new_marks = NULL;
+            }
+
+            $previous = $existing_by_student[$student_id];
+            $old_marks = $previous['marks_obtained'] === NULL
+                ? NULL
+                : number_format((float) $previous['marks_obtained'], 2, '.', '');
+            if ($previous['attendance_status'] === $entry['attendance_status'] && $old_marks === $new_marks) {
+                continue;
+            }
+            $this->db->where('id', $previous['id'])
+                ->where('submission_id', $submission_id)
+                ->update('internal_marks_entries', array(
+                    'attendance_status' => $entry['attendance_status'],
+                    'marks_obtained' => $new_marks,
+                    'updated_at' => $now
+                ));
+            $changes[] = array(
+                'student_id' => (int) $student_id,
+                'student_name' => $previous['student_name_snapshot'],
+                'roll_number' => $previous['roll_number_snapshot'],
+                'from_status' => $previous['attendance_status'],
+                'from_marks' => $old_marks,
+                'to_status' => $entry['attendance_status'],
+                'to_marks' => $new_marks
+            );
+        }
+
+        if (empty($changes)) {
+            $this->db->trans_rollback();
+            return array('ok' => FALSE, 'message' => 'No marks changed; there is nothing to save.');
+        }
+        $window = $this->get_window($submission['session_label'], $submission['course']);
+        $this->db->where('id', $submission_id)->update('internal_marks_submissions', array(
+            'updated_by' => $admin_id,
+            'updated_at' => $now
+        ));
+        $this->db->insert('internal_marks_audit', array(
+            'submission_id' => $submission_id,
+            'window_id' => $window ? $window['id'] : NULL,
+            'actor_type' => 'admin',
+            'actor_id' => $admin_id,
+            'action' => 'admin_marks_edited',
+            'reason' => $reason,
+            'details' => json_encode(array(
+                'assessment_id' => (int) $assessment_id,
+                'subject_code' => $assessment['subject_code'],
+                'subject' => $assessment['subject_name_snapshot'],
+                'component' => $assessment['component'],
+                'changes' => $changes
+            )),
+            'created_at' => $now
+        ));
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+            return array('ok' => FALSE, 'message' => 'Admin mark changes could not be saved.');
+        }
+        $this->db->trans_commit();
+        return array('ok' => TRUE, 'message' => 'Admin mark changes saved and added to the audit history.');
     }
 
     public function reopen_submission($submission_id, $reason, $admin_id)
@@ -577,7 +836,11 @@ class Internal_marks_model extends CI_Model
             'actor_id' => $admin_id,
             'action' => 'submission_reopened',
             'reason' => $reason,
-            'details' => NULL,
+            'details' => json_encode(array(
+                'previous_status' => $submission['status'],
+                'institution_edit_allowed' => TRUE,
+                'entry_window_override' => TRUE
+            )),
             'created_at' => $now
         ));
         if ($this->db->trans_status() === FALSE) {
@@ -612,6 +875,17 @@ class Internal_marks_model extends CI_Model
             ->order_by('e.roll_number_snapshot', 'ASC')
             ->get()
             ->result_array();
+    }
+
+    private function window_is_open($window, $now = NULL)
+    {
+        if ($now === NULL) {
+            $now = date('Y-m-d H:i:s');
+        }
+        return $window
+            && (int) $window['is_open'] === 1
+            && $now >= $window['starts_at']
+            && $now <= $window['ends_at'];
     }
 
 }
