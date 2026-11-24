@@ -339,7 +339,7 @@ class Admit_card_model extends CI_Model
     public function get_verified_student($token_hash)
     {
         return $this->db
-            ->select('e.id, e.ref_no, e.name, e.father_name, e.img1')
+            ->select('e.id, e.ref_no, e.name, e.father_name, e.train_school, e.img1')
             ->from('admit_card_verification_token t')
             ->join('admit_card_release r', 'r.student_id = t.student_id', 'inner')
             ->join('exam_form_tb e', 'e.id = t.student_id', 'inner')

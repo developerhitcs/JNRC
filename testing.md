@@ -216,17 +216,19 @@ successful download.
 1. Scan a released test card's QR or open its URL.
 2. Inspect the result and photo, if one is available.
 
-**Pass when:** it reports Valid and displays only validity, name, father's
-name, reference number, and approved photo. It must not reveal internal IDs,
-contact details, addresses, marks, or institution-only data.
+**Pass when:** it reports Valid and displays the candidate's name, father's
+name, reference number, institution, and approved photo, with details on the
+left and a framed photo on the right. It must not reveal internal IDs, contact
+details, addresses, marks, or other institution-only data.
 
 ### AD-09 — Invalid QR token
 
 1. Change one character in the test card's token URL and open it.
 2. Try the corresponding verification-photo route with the changed token.
 
-**Pass when:** the altered token is invalid and reveals no student identity
-or photo.
+**Pass when:** the altered token displays the invalid-verification page and
+reveals no student identity or photo. The verification-photo route must still
+return 404 for an invalid token.
 
 ### AD-10 — Institution cannot fetch another institution's card
 

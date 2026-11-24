@@ -222,6 +222,7 @@ $route['institution_admit_cards'] = 'Admit_cards/institution_index';
 $route['institution_admit_cards/bulk'] = 'Admit_cards/download_bulk';
 $route['institution_admit_card/(:num)'] = 'Admit_cards/download/$1';
 $route['verify/admit-card/([a-f0-9]{64})'] = 'Admit_cards/verify/$1';
+$route['verify/admit-card/(:any)'] = 'Admit_cards/verify/$1';
 $route['verify/admit-card-photo/([a-f0-9]{64})'] = 'Admit_cards/verification_photo/$1';
 $route['admin/passed-out'] = 'Passed_out/admin_index';
 $route['admin/passed-out/export'] = 'Passed_out/admin_export';
