@@ -171,10 +171,8 @@ $reg_sign = ac_pick(
 						<col width="20%" style="width: 20%;">
 					</colgroup>
 					<tr>
-						<td class="field-label" width="14%" style="width: 14%;"><strong>Roll No.:</strong></td>
-						<td class="field-value roll-number-value" width="34%" style="width: 34%;"><?php echo ac_e(ac_get($key, 'admit_card_roll_no')); ?></td>
-						<td class="field-label" width="14%" style="width: 14%;"><strong>Ref No.:</strong></td>
-						<td class="field-value"><?php echo ac_e(ac_get($key, 'ref_no')); ?></td>
+						<td class="field-label">Name:</td>
+						<td class="field-value" colspan="3"><?php echo ac_e(ac_get($key, 'name')); ?></td>
 						<td class="photo-cell" rowspan="5">
 							<?php if ($photo !== ''): ?>
 								<img class="candidate-photo" src="<?php echo $photo; ?>" alt="Candidate photo"><br>
@@ -185,12 +183,14 @@ $reg_sign = ac_pick(
 						</td>
 					</tr>
 					<tr>
-						<td class="field-label">Name:</td>
-						<td class="field-value" colspan="3"><?php echo ac_e(ac_get($key, 'name')); ?></td>
-					</tr>
-					<tr>
 						<td class="field-label">Father's Name:</td>
 						<td class="field-value" colspan="3"><?php echo ac_e(ac_get($key, 'father_name')); ?></td>
+					</tr>
+					<tr>
+						<td class="field-label" width="14%" style="width: 14%;"><strong>Roll No.:</strong></td>
+						<td class="field-value roll-number-value" width="34%" style="width: 34%;"><?php echo ac_e(ac_get($key, 'admit_card_roll_no')); ?></td>
+						<td class="field-label" width="14%" style="width: 14%;"><strong>Ref No.:</strong></td>
+						<td class="field-value"><?php echo ac_e(ac_get($key, 'ref_no')); ?></td>
 					</tr>
 					<tr>
 						<td class="field-label">Date of Birth:</td>
