@@ -34,6 +34,16 @@ class Internal_marks_model extends CI_Model
         return $contexts;
     }
 
+    public function get_admin_institutions()
+    {
+        return $this->db->distinct()
+            ->select('school_code, institution_name_snapshot AS school_name')
+            ->from('internal_marks_submissions')
+            ->order_by('institution_name_snapshot', 'ASC')
+            ->get()
+            ->result_array();
+    }
+
     public function get_configured_windows()
     {
         return $this->db->select(
