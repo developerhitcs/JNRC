@@ -260,33 +260,49 @@ class Admit_cards extends CI_Controller
             return;
         }
 
-        $posted_ids = $this->input->post('student_ids');
-        if (!is_array($posted_ids)) {
-            show_error('Select one or more released admit cards to download.', 400);
-            return;
-        }
-
+        $download_all = $this->input->post('download_all', TRUE) === '1';
+        $students = array();
         $student_ids = array();
-        foreach ($posted_ids as $posted_id) {
-            if (is_scalar($posted_id) && ctype_digit((string) $posted_id) && (int) $posted_id > 0) {
-                $student_ids[] = (int) $posted_id;
+
+        if ($download_all) {
+            $students = $this->Admit_card_model->get_all_institution_released_students($institution['school_code']);
+            foreach ($students as $student) {
+                $student_ids[] = (int) $student['id'];
+            }
+        } else {
+            $posted_ids = $this->input->post('student_ids');
+            if (!is_array($posted_ids)) {
+                show_error('Select one or more released admit cards to download.', 400);
+                return;
+            }
+
+            foreach ($posted_ids as $posted_id) {
+                if (is_scalar($posted_id) && ctype_digit((string) $posted_id) && (int) $posted_id > 0) {
+                    $student_ids[] = (int) $posted_id;
+                }
             }
         }
         $student_ids = array_values(array_unique($student_ids));
 
-        if (count($student_ids) === 0 || count($student_ids) > 100) {
+        if (count($student_ids) === 0) {
+            show_error('There are no released admit cards to include in the ZIP.', 400);
+            return;
+        }
+
+        if (!$download_all && count($student_ids) > 100) {
             show_error('Select between 1 and 100 admit cards per ZIP download.', 400);
             return;
         }
 
-        $students = array();
-        foreach ($student_ids as $student_id) {
-            $student = $this->Admit_card_model->get_released_student($student_id, $institution['school_code']);
-            if (!$student) {
-                show_error('One or more selected cards are no longer released for this institution. Refresh the list and try again.', 409);
-                return;
+        if (!$download_all) {
+            foreach ($student_ids as $student_id) {
+                $student = $this->Admit_card_model->get_released_student($student_id, $institution['school_code']);
+                if (!$student) {
+                    show_error('One or more selected cards are no longer released for this institution. Refresh the list and try again.', 409);
+                    return;
+                }
+                $students[] = $student;
             }
-            $students[] = $student;
         }
 
         if (!class_exists('ZipArchive')) {

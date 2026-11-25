@@ -68,6 +68,25 @@ class Admit_card_model extends CI_Model
             ->result_array();
     }
 
+    public function get_all_institution_released_students($school_code)
+    {
+        return $this->db
+            ->select('e.*, c.school_name, c.id AS institution_id, r.status AS release_status, r.center_id, ct.name_center')
+            ->select('(SELECT t.token_hash FROM admit_card_verification_token t WHERE t.student_id = e.id AND t.revoked_at IS NULL ORDER BY t.id DESC LIMIT 1) AS verification_token_hash', FALSE)
+            ->from('exam_form_tb e')
+            ->join('admit_card_release r', 'r.student_id = e.id', 'inner')
+            ->join('college_list c', 'c.school_code = e.issue_by', 'left')
+            ->join('center_tb ct', 'ct.id = r.center_id', 'left')
+            ->where('e.issue_by', $school_code)
+            ->where('r.status', 'released')
+            ->where('r.center_id IS NOT NULL', NULL, FALSE)
+            ->order_by('e.batch_session', 'DESC')
+            ->order_by('e.course')
+            ->order_by('e.name')
+            ->get()
+            ->result_array();
+    }
+
     public function get_released_student($student_id, $school_code = NULL)
     {
         $this->db

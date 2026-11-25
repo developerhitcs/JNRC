@@ -25,6 +25,10 @@ foreach ($documents as $document) {
         appearance: auto !important;
         -webkit-appearance: radio !important;
         vertical-align: middle;
+    } 
+    .registration-type-option span {
+        font-size: 14px;
+        font-weight: 400;
     }
 </style>
 <div class="content">
@@ -52,7 +56,7 @@ foreach ($documents as $document) {
                         </div>
                         <div class="row">
                             <div class="col-md-4">
-                                <label>Form No. (if available; duplicates allowed)</label>
+                                <label>Form No. (if available)</label>
                                 <input class="form-control" name="form_number" maxlength="50" value="<?php echo html_escape($value('form_number')); ?>">
                             </div>
                             <div class="col-md-4">

@@ -8,7 +8,7 @@
                         <p class="card-category">Only cards released by JNRC for your institution are shown.</p>
                     </div>
                     <div class="card-body">
-                        <p>Select individual cards or use the checkbox in the table heading to select this page (up to 100 cards), then download them together as a ZIP.</p>
+                        <p>Select individual cards or use the checkbox in the table heading to ZIP up to 100 cards on this page. Use the all-released option to include cards from every page.</p>
                         <?php echo form_open('institution_admit_cards/bulk'); ?>
                         <div class="table-responsive">
                             <table class="table table-striped">
@@ -54,6 +54,13 @@
                             Download selected as ZIP
                         </button>
                         <?php echo form_close(); ?>
+                        <?php if (!empty($students)): ?>
+                            <?php echo form_open('institution_admit_cards/bulk'); ?>
+                            <button class="btn btn-primary" type="submit" name="download_all" value="1">
+                                Download all released as ZIP
+                            </button>
+                            <?php echo form_close(); ?>
+                        <?php endif; ?>
                         <?php if ($page > 1): ?>
                             <a class="btn btn-sm btn-outline-primary" href="<?php echo base_url('institution_admit_cards?page=' . ($page - 1)); ?>">Previous</a>
                         <?php endif; ?>
